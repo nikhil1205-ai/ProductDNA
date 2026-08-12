@@ -1,0 +1,32 @@
+{
+  "request_id": "REQ-20260812-8A0ADA51",
+  "input_type": "URL",
+  "identity": {
+    "product_name": "Example Domain",
+    "brand": null,
+    "manufacturer": null,
+    "model": null,
+    "sku": null,
+    "part_number": null
+  },
+  "metadata": {
+    "filename": null,
+    "extension": null,
+    "mime_type": "text/html",
+    "size_bytes": null,
+    "created_at": null,
+    "checksum": null,
+    "source_url": "https://example.com",
+    "retrieved_at": "2026-08-12T13:32:23.362711+00:00"
+  },
+  "content": {
+    "text": "Example Domain Example Domain This domain is for use in documentation examples without needing permission. Avoid use in operations. Learn more",
+    "title": "Example Domain",
+    "tables": [],
+    "structured_data": null,
+    "page_count": null,
+    "row_count": null,
+    "column_count": null
+  },
+  "status": "READY_FOR_RESOLUTION"
+}

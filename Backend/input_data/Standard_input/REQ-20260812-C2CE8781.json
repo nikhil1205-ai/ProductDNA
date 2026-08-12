@@ -1,0 +1,32 @@
+{
+  "request_id": "REQ-20260812-C2CE8781",
+  "input_type": "PRODUCT_NAME",
+  "identity": {
+    "product_name": "ABB ACS880 Industrial Drive",
+    "brand": "ABB",
+    "manufacturer": "ABB",
+    "model": "ACS880-01",
+    "sku": null,
+    "part_number": null
+  },
+  "metadata": {
+    "filename": null,
+    "extension": null,
+    "mime_type": "text/plain",
+    "size_bytes": 62,
+    "created_at": "2026-08-12T13:32:22.309259+00:00",
+    "checksum": null,
+    "source_url": null,
+    "retrieved_at": null
+  },
+  "content": {
+    "text": "ABB ACS880 Industrial Drive\nManufacturer: ABB\nModel: ACS880-01",
+    "title": null,
+    "tables": [],
+    "structured_data": null,
+    "page_count": null,
+    "row_count": null,
+    "column_count": null
+  },
+  "status": "READY_FOR_RESOLUTION"
+}
