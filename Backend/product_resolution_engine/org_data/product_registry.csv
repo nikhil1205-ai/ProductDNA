@@ -1,0 +1,11 @@
+product_id,product_name,brand,manufacturer,model,sku,part_number,product_family,category,aliases
+PDNA-001,ABB ACS880 Industrial Drive,ABB,ABB,ACS880-01-145A-3,3AUA000012345,,ACS880,Industrial Drives,"ACS880 Drive;ACS880 VFD"
+PDNA-002,ABB ACS880 Industrial Drive,ABB,ABB,ACS880-01-169A-3,3AUA000012346,,ACS880,Industrial Drives,"ACS880 Drive"
+PDNA-003,ABB ACS580 Industrial Drive,ABB,ABB,ACS580-01-046A-4,3AUA000022222,,ACS580,Industrial Drives,"ACS580 Drive"
+PDNA-004,Schneider Altivar Drive,Schneider Electric,Schneider Electric,ATV320,ATV320-001,,ATV320,Industrial Drives,"Altivar 320"
+PDNA-005,Generic Brand Sensor X,Generic,Generic,Sensor-X,,X-999,,Sensors,"Sensor X"
+PDNA-006,Generic Brand Sensor Y,Generic,Generic,Sensor-Y,,Y-999,,Sensors,"Sensor Y"
+PDNA-007,Ambig Product,AmbigCorp,AmbigCorp,AMB-1,,,AMB,Test,""
+PDNA-008,Ambig Product 2,AmbigCorp,AmbigCorp,AMB-1,,,AMB,Test,""
+PDNA-009,Duplicate Product,DupCorp,DupCorp,DUP-1,DUP123,,DUP,Test,""
+PDNA-010,Duplicate Product,DupCorp,DupCorp,DUP-1,DUP123,,DUP,Test,""

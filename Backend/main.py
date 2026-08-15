@@ -12,9 +12,9 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, sta
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from data_integration.collect import integration_module_function
-from data_integration.schemas.input_schema import ProductInputRequest
-from data_integration.schemas.response_schema import StandardProductInput, StandardErrorResponse
+from product_integration.collect import integration_module_function
+from product_integration.schemas.input_schema import ProductInputRequest
+from product_integration.schemas.response_schema import StandardProductInput, StandardErrorResponse
 
 app = FastAPI(
     title="ProductDNA - Module 1 (Product Intake & Document Processing)",

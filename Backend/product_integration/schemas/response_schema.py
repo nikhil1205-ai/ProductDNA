@@ -35,6 +35,7 @@ class StandardProductInput(BaseModel):
     metadata: ProductMetadata = Field(..., description="Technical and source metadata")
     content: ProductContent = Field(..., description="Extracted content payload")
     status: str = Field("READY_FOR_RESOLUTION", description="Processing status for Module 2")
+    resolution_data: Optional[Dict[str, Any]] = Field(None, description="Output from Module 2 Product Resolution")
 
 class StandardErrorResponse(BaseModel):
     status: str = Field("ERROR", description="Status code string")

@@ -7,14 +7,14 @@ backend_dir = Path(__file__).resolve().parent
 if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
-from data_integration.collect import run_module_1
+from product_integration.collect import integration_module_function
 
 def test_suite():
     print("=== Running Module 1 Test Suite ===")
 
     # Test 1: Product Name
     print("\n--- Test 1: Product Name ---")
-    res1 = run_module_1(input_text="ABB ACS880 Industrial Drive\nManufacturer: ABB\nModel: ACS880-01")
+    res1 = integration_module_function(input_text="ABB ACS880 Industrial Drive\nManufacturer: ABB\nModel: ACS880-01")
     print(f"Request ID: {res1.request_id}")
     print(f"Input Type: {res1.input_type}")
     print(f"Identity: {res1.identity.model_dump()}")
@@ -27,7 +27,7 @@ def test_suite():
     pdf_path = backend_dir / "input_data" / "sample_abb.pdf"
     with open(pdf_path, "rb") as f:
         pdf_bytes = f.read()
-    res2 = run_module_1(file_bytes=pdf_bytes, filename="sample_abb.pdf")
+    res2 = integration_module_function(file_bytes=pdf_bytes, filename="sample_abb.pdf")
     print(f"Request ID: {res2.request_id}")
     print(f"Input Type: {res2.input_type}")
     print(f"Page Count: {res2.content.page_count}")
@@ -41,7 +41,7 @@ def test_suite():
     csv_path = backend_dir / "input_data" / "sample_abb.csv"
     with open(csv_path, "rb") as f:
         csv_bytes = f.read()
-    res3 = run_module_1(file_bytes=csv_bytes, filename="sample_abb.csv")
+    res3 = integration_module_function(file_bytes=csv_bytes, filename="sample_abb.csv")
     print(f"Request ID: {res3.request_id}")
     print(f"Input Type: {res3.input_type}")
     print(f"Row Count: {res3.content.row_count}")
@@ -53,7 +53,7 @@ def test_suite():
     # Test 4: URL
     print("\n--- Test 4: URL ---")
     try:
-        res4 = run_module_1(url_str="https://example.com")
+        res4 = integration_module_function(url_str="https://example.com")
         print(f"Request ID: {res4.request_id}")
         print(f"Input Type: {res4.input_type}")
         print(f"Title: {res4.content.title}")
@@ -71,7 +71,7 @@ def test_suite():
         "sku": "6205",
         "category": "Bearing"
     }
-    res5 = run_module_1(json_data=sample_json)
+    res5 = integration_module_function(json_data=sample_json)
     print(f"Request ID: {res5.request_id}")
     print(f"Input Type: {res5.input_type}")
     print(f"Identity: {res5.identity.model_dump()}")
@@ -82,7 +82,7 @@ def test_suite():
     # Test 6: Invalid Input
     print("\n--- Test 6: Invalid Input Validation ---")
     try:
-        run_module_1(file_bytes=b"hello", filename="invalid.txt")
+        integration_module_function(file_bytes=b"hello", filename="invalid.txt")
         print("FAIL: Expected validation error for invalid file extension")
     except ValueError as ve:
         print(f"SUCCESS: Caught expected validation error -> {ve}")
