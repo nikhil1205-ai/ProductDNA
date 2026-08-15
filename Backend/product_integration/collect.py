@@ -23,6 +23,11 @@ from .services.identity_extractor import extract_identity
 from .services.builder import build_standard_product_input
 from .schemas.response_schema import StandardProductInput
 
+import sys
+if str(Path(__file__).resolve().parent.parent) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from product_resolution_engine.resolution_main import run_resolution
+
 # Output directory path as per project spec
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "input_data" / "Standard_input"
 
@@ -143,7 +148,16 @@ def integration_module_function(
         status="READY_FOR_RESOLUTION"
     )
 
-    # 6. Save JSON output to Backend/input_data/Standard_input/
+    # 6. Run Module 2 Resolution
+    try:
+        resolved_dict = run_resolution(standard_object.model_dump())
+        # Update the standard object with the resolved data and status
+        standard_object.resolution_data = resolved_dict.get("resolution_data")
+        standard_object.status = resolved_dict.get("status", standard_object.status)
+    except Exception as e:
+        print(f"Warning: Module 2 resolution failed for {request_id}: {str(e)}")
+
+    # 7. Save JSON output to Backend/input_data/Standard_input/
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     file_path = OUTPUT_DIR / f"{request_id}.json"
 
