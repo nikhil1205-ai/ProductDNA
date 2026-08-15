@@ -4,4 +4,4 @@ Frontend/.env
 Backend/.env
 Backend/.venv
 Frontend/dist
-
+__pycache__
