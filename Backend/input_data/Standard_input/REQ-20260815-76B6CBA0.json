@@ -1,0 +1,32 @@
+{
+  "request_id": "REQ-20260815-76B6CBA0",
+  "input_type": "PDF",
+  "identity": {
+    "product_name": "ABB ACS880 Industrial Drive",
+    "brand": "ABB",
+    "manufacturer": "ABB",
+    "model": "ACS880-01-145A-3",
+    "sku": "3AUA000012345",
+    "part_number": null
+  },
+  "metadata": {
+    "filename": "sample_abb.pdf",
+    "extension": ".pdf",
+    "mime_type": "application/pdf",
+    "size_bytes": 981,
+    "created_at": "2026-08-15T15:43:14.960511+00:00",
+    "checksum": "042516f464ddf5127a9b4caf1966f7d849a0f6b243ae9e93c266fa273bc6412e",
+    "source_url": null,
+    "retrieved_at": null
+  },
+  "content": {
+    "text": "ABB ACS880 Industrial Drive\nManufacturer: ABB\nModel: ACS880-01-145A-3\nSKU: 3AUA000012345\nDescription: High performance wall-mounted single drive.",
+    "title": null,
+    "tables": [],
+    "structured_data": null,
+    "page_count": 1,
+    "row_count": null,
+    "column_count": null
+  },
+  "status": "READY_FOR_RESOLUTION"
+}

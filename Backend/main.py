@@ -12,7 +12,7 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, sta
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from data_integration.collect import run_module_1
+from data_integration.collect import integration_module_function
 from data_integration.schemas.input_schema import ProductInputRequest
 from data_integration.schemas.response_schema import StandardProductInput, StandardErrorResponse
 
@@ -37,13 +37,6 @@ def read_root():
         "status": "online",
         "service": "ProductDNA Module 1 - Product Intake & Document Processing",
         "documentation": "/docs"
-    }
-
-@app.get("/api/health")
-def check_health():
-    return {
-        "status": "healthy",
-        "service": "ProductDNA Module 1 - Product Intake & Document Processing"
     }
 
 @app.post(
@@ -113,7 +106,7 @@ async def process_product_input(
 
     # Run Module 1 Orchestration
     try:
-        result = run_module_1(
+        result = integration_module_function(
             file_bytes=file_bytes,
             filename=filename,
             url_str=target_url,

@@ -32,7 +32,7 @@ def generate_request_id() -> str:
     short_uuid = uuid.uuid4().hex[:8].upper()
     return f"REQ-{now_str}-{short_uuid}"
 
-def run_module_1(
+def integration_module_function(
     file_bytes: Optional[bytes] = None,
     filename: Optional[str] = None,
     url_str: Optional[str] = None,
