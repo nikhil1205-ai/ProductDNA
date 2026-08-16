@@ -16,11 +16,17 @@ from product_integration.collect import integration_module_function
 from product_integration.schemas.input_schema import ProductInputRequest
 from product_integration.schemas.response_schema import StandardProductInput, StandardErrorResponse
 
+from Evidence_collection_sources.api.routes import router as module4_router
+
 app = FastAPI(
-    title="ProductDNA - Module 1 (Product Intake & Document Processing)",
-    description="Deterministic Product Intake API converting raw product input into Standard Product Input Objects.",
+    title="ProductDNA — Product Intelligence Engine",
+    description="Product Intake, Resolution, and Evidence Extraction APIs.",
     version="1.0.0"
 )
+
+# Include Module 4 Evidence Extraction Router
+app.include_router(module4_router)
+
 
 # Enable CORS for local frontend communication
 app.add_middleware(

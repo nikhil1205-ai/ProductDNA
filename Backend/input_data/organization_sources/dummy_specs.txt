@@ -1,0 +1,12 @@
+# Technical Documentation & Specs
+
+## Technical Characteristics
+Input voltage: 380-480 V
+Rated power: 75 kW
+Rated current: 145 A
+Mains frequency: 50/60 Hz
+Enclosure class: IP21
+Suitable applications: pumps, fans and conveyors.
+Mounting type: wall-mounted.
+Dimensions: 400x300x200 mm
+Weight: 25 kg
