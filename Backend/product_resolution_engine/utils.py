@@ -61,7 +61,7 @@ def match_part_number(part_number: Optional[str], registry: List[Dict[str, str]]
 
 # --- identity_matcher.py ---
 def match_identity(manufacturer: Optional[str], brand: Optional[str], model: Optional[str], registry: List[Dict[str, str]]) -> List[Dict[str, str]]:
-    """Finds products matching Manufacturer + Model exactly."""
+    """Finds products matching Manufacturer + Model (including prefix/family matches)."""
     input_mfg = normalize_text(manufacturer) or normalize_text(brand)
     input_model = normalize_text(model)
     
@@ -72,8 +72,13 @@ def match_identity(manufacturer: Optional[str], brand: Optional[str], model: Opt
     for record in registry:
         reg_mfg = normalize_text(record.get('manufacturer', '')) or normalize_text(record.get('brand', ''))
         reg_model = normalize_text(record.get('model', ''))
+        reg_family = normalize_text(record.get('product_family', ''))
         
-        if reg_mfg == input_mfg and reg_model == input_model:
+        model_matches = (reg_model == input_model or 
+                         (reg_family and reg_family == input_model) or 
+                         reg_model.startswith(input_model))
+                         
+        if reg_mfg == input_mfg and model_matches:
             matches.append(record)
             
     return matches

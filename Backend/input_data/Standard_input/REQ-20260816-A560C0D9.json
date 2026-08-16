@@ -1,5 +1,5 @@
 {
-  "request_id": "REQ-20260816-6DAD4280",
+  "request_id": "REQ-20260816-A560C0D9",
   "input_type": "JSON",
   "identity": {
     "product_name": "SKF 6205",
@@ -14,7 +14,7 @@
     "extension": null,
     "mime_type": "application/json",
     "size_bytes": 105,
-    "created_at": "2026-08-16T07:04:56.270303+00:00",
+    "created_at": "2026-08-16T07:51:41.009076+00:00",
     "checksum": null,
     "source_url": null,
     "retrieved_at": null
@@ -39,6 +39,7 @@
     "status": "UNRESOLVED",
     "match_type": "NO_MATCH",
     "confidence": 0.0,
-    "product_id": null
+    "product_id": null,
+    "candidates": []
   }
 }
