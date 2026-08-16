@@ -28,7 +28,7 @@ from ..extractors.pattern_extractor import PatternExtractor
 from ..extractors.table_extractor import TableExtractor
 from ..extractors.llm_extractor import LLMExtractor
 
-from ..config.settings import settings
+ENABLE_HASH_DEDUPLICATION = True
 
 class EvidenceExtractionService:
     """
@@ -109,7 +109,7 @@ class EvidenceExtractionService:
                 collected_source = self.text_collector.collect(src_input, src_id)
 
             # Step B: Hash Deduplication
-            if settings.enable_hash_deduplication and collected_source.metadata and collected_source.metadata.content_hash:
+            if ENABLE_HASH_DEDUPLICATION and collected_source.metadata and collected_source.metadata.content_hash:
                 chash = collected_source.metadata.content_hash
                 if chash in seen_hashes:
                     collected_source.status = SourceStatus.DUPLICATE

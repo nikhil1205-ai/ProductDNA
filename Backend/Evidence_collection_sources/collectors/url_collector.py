@@ -9,8 +9,9 @@ import requests
 
 from .base import BaseSourceCollector
 from ..models.source_models import SourceInput, Source, SourceMetadata, SourceType, SourceStatus, SourceOrigin
-from ..config.settings import settings
 
+DEFAULT_REQUEST_TIMEOUT = 15
+USER_AGENT = "ProductDNA-EvidenceExtractor/1.0 (+https://productdna.ai)"
 class URLCollector(BaseSourceCollector):
     """
     Intake collector for URL / Website sources.
@@ -35,9 +36,9 @@ class URLCollector(BaseSourceCollector):
             )
 
         # Attempt HTTP fetch
-        headers = {"User-Agent": settings.user_agent}
+        headers = {"User-Agent": USER_AGENT}
         try:
-            response = requests.get(raw_url, headers=headers, timeout=settings.default_request_timeout, allow_redirects=True)
+            response = requests.get(raw_url, headers=headers, timeout=DEFAULT_REQUEST_TIMEOUT, allow_redirects=True)
             response.raise_for_status()
             
             final_url = response.url

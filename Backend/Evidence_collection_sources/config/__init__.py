@@ -2,6 +2,6 @@
 Module 4 Configuration Settings
 """
 
-from .settings import settings
+from .llm_config import llm_config
 
-__all__ = ["settings"]
+__all__ = ["llm_config"]

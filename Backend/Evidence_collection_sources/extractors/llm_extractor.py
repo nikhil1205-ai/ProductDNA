@@ -5,13 +5,15 @@ Module 4 LLM & NLP Extractor Implementation
 import json
 import re
 from typing import List, Dict, Any, Optional
-import requests
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import PromptTemplate
+from langchain_core.exceptions import OutputParserException
 
 from .base import BaseExtractor, LLMExtractionProvider
 from ..models.document_models import Document, TextBlock
 from ..models.extraction_models import ExtractedAttribute, ExtractionMethod
 from ..mapping.attribute_mapper import AttributeMapper
-from ..config.settings import settings
+from ..config.llm_config import llm_config
 
 class LLMExtractionProviderImpl(LLMExtractionProvider):
     """
@@ -56,40 +58,53 @@ Return JSON in this format:
         source_id: str,
         product_context: Optional[Dict[str, Any]] = None
     ) -> List[ExtractedAttribute]:
-        api_key = settings.gemini_api_key
+        api_key = llm_config.gemini_api_key
         
-        # If API key is available, call Gemini REST API
+        # If API key is available, call Gemini API via Langchain
         if api_key:
             try:
-                extracted = self._call_gemini_api(document_text, source_id, api_key)
+                extracted = self._call_langchain_api(document_text, source_id, api_key)
                 if extracted:
                     return extracted
             except Exception as e:
                 # Fail gracefully to NLP fallback
+                print(f"LLM Extraction failed: {e}")
                 pass
 
         # Fallback: Heuristic NLP / Text pattern extraction
-        return self._nlp_heuristic_fallback(document_text, source_id)
+        if llm_config.enable_llm_fallback:
+            return self._nlp_heuristic_fallback(document_text, source_id)
+        return []
 
-    def _call_gemini_api(self, text: str, source_id: str, api_key: str) -> List[ExtractedAttribute]:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.llm_model}:generateContent?key={api_key}"
-        headers = {"Content-Type": "application/json"}
+    def _call_langchain_api(self, text: str, source_id: str, api_key: str) -> List[ExtractedAttribute]:
+        llm = ChatGoogleGenerativeAI(
+            model=llm_config.llm_model,
+            google_api_key=api_key,
+            temperature=llm_config.llm_temperature
+        )
         
-        prompt_content = f"{self.SYSTEM_PROMPT}\n\nDOCUMENT CONTENT:\n{text[:6000]}"
-        payload = {
-            "contents": [{"parts": [{"text": prompt_content}]}],
-            "generationConfig": {
-                "temperature": settings.llm_temperature,
-                "responseMimeType": "application/json"
-            }
-        }
+        prompt_template = PromptTemplate.from_template(
+            "{system_prompt}\n\nDOCUMENT CONTENT:\n{text}"
+        )
         
-        resp = requests.post(url, json=payload, headers=headers, timeout=20)
-        resp.raise_for_status()
+        chain = prompt_template | llm
         
-        data = resp.json()
-        raw_json_str = data["candidates"][0]["content"]["parts"][0]["text"]
-        parsed = json.loads(raw_json_str)
+        # Truncate text to avoid token limits if necessary
+        truncated_text = text[:6000]
+        
+        response = chain.invoke({
+            "system_prompt": self.SYSTEM_PROMPT,
+            "text": truncated_text
+        })
+        
+        # Extract JSON from response. Sometimes LLMs return markdown code blocks.
+        raw_json_str = response.content
+        if raw_json_str.startswith("```json"):
+            raw_json_str = raw_json_str[7:]
+        if raw_json_str.endswith("```"):
+            raw_json_str = raw_json_str[:-3]
+            
+        parsed = json.loads(raw_json_str.strip())
         
         results: List[ExtractedAttribute] = []
         for item in parsed.get("attributes", []):

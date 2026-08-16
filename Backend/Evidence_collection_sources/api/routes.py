@@ -10,7 +10,7 @@ from ..models.response_models import StructuredEvidence, Module4Response
 from ..services.evidence_extraction_service import EvidenceExtractionService
 
 service = EvidenceExtractionService()
-# Helper function to run Module 4 flow from a JSON file in Standard_input
+
 def run_module4_on_file(filename: str) -> dict:
     """
     Reads a resolved product JSON from input_data/Standard_input,

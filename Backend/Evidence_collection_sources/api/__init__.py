@@ -1,7 +1,6 @@
 """
 Module 4 API Package
 """
+from .routes import run_module4_on_file
 
-from .routes import router
-
-__all__ = ["router"]
+__all__ = ["run_module4_on_file"]
