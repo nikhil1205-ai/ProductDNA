@@ -1,5 +1,5 @@
 {
-  "request_id": "REQ-20260812-A7FFB90A",
+  "request_id": "REQ-20260816-33E4763E",
   "input_type": "CSV",
   "identity": {
     "product_name": "ABB ACS880 Industrial Drive",
@@ -13,14 +13,14 @@
     "filename": "sample_abb.csv",
     "extension": ".csv",
     "mime_type": "text/csv",
-    "size_bytes": 231,
-    "created_at": "2026-08-12T13:32:22.487845+00:00",
-    "checksum": "5456866740f27b091978a010656d09d3c0b40885865ea2d6f7749d19c90bcc40",
+    "size_bytes": 128,
+    "created_at": "2026-08-16T07:04:55.617950+00:00",
+    "checksum": "b9587993e6386b6c2596f438926e5edcb576fbaea3db9bcbec7ab25475937d6d",
     "source_url": null,
     "retrieved_at": null
   },
   "content": {
-    "text": "CSV Header: SKU, Product Name, Brand, Manufacturer, Model, Category\nRow 1: SKU: ACS880-01-145A-3, Product Name: ABB ACS880 Industrial Drive, Brand: ABB, Manufacturer: ABB, Model: ACS880, Category: Industrial Drives\nRow 2: SKU: ATV320U15N4B, Product Name: Schneider Altivar 320, Brand: Schneider Electric, Manufacturer: Schneider Electric, Model: ATV320, Category: Variable Speed Drives",
+    "text": "CSV Header: SKU, Product Name, Brand, Manufacturer, Model, Category\nRow 1: SKU: ACS880-01-145A-3, Product Name: ABB ACS880 Industrial Drive, Brand: ABB, Manufacturer: ABB, Model: ACS880, Category: Industrial Drives",
     "title": null,
     "tables": [
       {
@@ -40,24 +40,22 @@
             "Manufacturer": "ABB",
             "Model": "ACS880",
             "Category": "Industrial Drives"
-          },
-          {
-            "SKU": "ATV320U15N4B",
-            "Product Name": "Schneider Altivar 320",
-            "Brand": "Schneider Electric",
-            "Manufacturer": "Schneider Electric",
-            "Model": "ATV320",
-            "Category": "Variable Speed Drives"
           }
         ],
-        "row_count": 2,
+        "row_count": 1,
         "column_count": 6
       }
     ],
     "structured_data": null,
     "page_count": null,
-    "row_count": 2,
+    "row_count": 1,
     "column_count": 6
   },
-  "status": "READY_FOR_RESOLUTION"
+  "status": "AMBIGUOUS",
+  "resolution_data": {
+    "status": "AMBIGUOUS",
+    "match_type": "ALIAS",
+    "confidence": 0.65,
+    "product_id": null
+  }
 }

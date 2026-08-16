@@ -1,5 +1,5 @@
 {
-  "request_id": "REQ-20260812-8A0ADA51",
+  "request_id": "REQ-20260816-22909314",
   "input_type": "URL",
   "identity": {
     "product_name": "Example Domain",
@@ -17,7 +17,7 @@
     "created_at": null,
     "checksum": null,
     "source_url": "https://example.com",
-    "retrieved_at": "2026-08-12T13:32:23.362711+00:00"
+    "retrieved_at": "2026-08-16T07:04:56.266650+00:00"
   },
   "content": {
     "text": "Example Domain Example Domain This domain is for use in documentation examples without needing permission. Avoid use in operations. Learn more",
@@ -28,5 +28,11 @@
     "row_count": null,
     "column_count": null
   },
-  "status": "READY_FOR_RESOLUTION"
+  "status": "UNRESOLVED",
+  "resolution_data": {
+    "status": "UNRESOLVED",
+    "match_type": "NO_MATCH",
+    "confidence": 0.0,
+    "product_id": null
+  }
 }

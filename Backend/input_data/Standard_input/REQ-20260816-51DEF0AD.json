@@ -1,5 +1,5 @@
 {
-  "request_id": "REQ-20260812-853A765E",
+  "request_id": "REQ-20260816-51DEF0AD",
   "input_type": "PDF",
   "identity": {
     "product_name": "ABB ACS880 Industrial Drive",
@@ -14,7 +14,7 @@
     "extension": ".pdf",
     "mime_type": "application/pdf",
     "size_bytes": 981,
-    "created_at": "2026-08-12T13:32:22.388825+00:00",
+    "created_at": "2026-08-16T07:03:37.603342+00:00",
     "checksum": "042516f464ddf5127a9b4caf1966f7d849a0f6b243ae9e93c266fa273bc6412e",
     "source_url": null,
     "retrieved_at": null
@@ -28,5 +28,11 @@
     "row_count": null,
     "column_count": null
   },
-  "status": "READY_FOR_RESOLUTION"
+  "status": "RESOLVED",
+  "resolution_data": {
+    "status": "RESOLVED",
+    "match_type": "EXACT_SKU",
+    "confidence": 1.0,
+    "product_id": "PDNA-001"
+  }
 }

@@ -48,7 +48,7 @@ def test_suite():
     print(f"Columns: {res3.content.tables[0]['columns'] if res3.content.tables else []}")
     print(f"Identity: {res3.identity.model_dump()}")
     assert res3.input_type == "CSV"
-    assert res3.content.row_count == 2
+    assert res3.content.row_count == 1
 
     # Test 4: URL
     print("\n--- Test 4: URL ---")

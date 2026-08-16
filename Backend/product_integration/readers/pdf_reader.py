@@ -1,6 +1,6 @@
 import io
 from typing import Dict, Any, List
-import fitz  # PyMuPDF
+import pymupdf
 import pdfplumber
 
 def read_pdf(file_bytes: bytes) -> Dict[str, Any]:
@@ -17,7 +17,7 @@ def read_pdf(file_bytes: bytes) -> Dict[str, Any]:
 
     # Use PyMuPDF for text & page count
     try:
-        doc = fitz.open(stream=file_bytes, filetype="pdf")
+        doc = pymupdf.open(stream=file_bytes, filetype="pdf")
         page_count = len(doc)
         for page_idx in range(page_count):
             page = doc.load_page(page_idx)
