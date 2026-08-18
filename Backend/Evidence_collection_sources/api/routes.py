@@ -92,11 +92,11 @@ def run_module4_on_file(filename: str) -> dict:
         "sources": sources
     }
 
-    # Execute extraction service
-    result = service.process(payload)
-    
-    # Return dictionary representation
+    result = service.process(payload)    
     if hasattr(result, "model_dump"):
         return result.model_dump()
     return result.dict()
 
+
+
+print(run_module4_on_file("REQ-20260816-2AD355E9.json"))

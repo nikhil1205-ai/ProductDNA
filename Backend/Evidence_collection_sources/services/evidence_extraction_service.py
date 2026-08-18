@@ -108,23 +108,6 @@ class EvidenceExtractionService:
             else:
                 collected_source = self.text_collector.collect(src_input, src_id)
 
-            # Step B: Hash Deduplication
-            if ENABLE_HASH_DEDUPLICATION and collected_source.metadata and collected_source.metadata.content_hash:
-                chash = collected_source.metadata.content_hash
-                if chash in seen_hashes:
-                    collected_source.status = SourceStatus.DUPLICATE
-                    collected_source.error_message = "Duplicate document detected; skipping reprocessing."
-                    sources.append(collected_source)
-                    warnings.append(
-                        ProcessingWarning(
-                            source_id=src_id,
-                            warning_code="DUPLICATE_SOURCE",
-                            message=f"Duplicate content for source '{collected_source.source_name}'"
-                        )
-                    )
-                    continue
-                seen_hashes.add(chash)
-
             sources.append(collected_source)
 
             # Check collection failures
@@ -174,17 +157,10 @@ class EvidenceExtractionService:
             llm_attrs = self.llm_extractor.extract(doc)
             all_attributes.extend(llm_attrs)
 
-        # 5. Deduplicate extracted attributes per source_id + canonical name
-        unique_attributes: List[ExtractedAttribute] = []
-        attr_dedup_keys: Set[str] = set()
+        # Direct attribute pass-through for prototype (no attribute deduplication)
+        unique_attributes: List[ExtractedAttribute] = all_attributes
 
-        for attr in all_attributes:
-            key = f"{attr.source_id}:{attr.attribute}:{str(attr.value).lower().strip()}"
-            if key not in attr_dedup_keys:
-                attr_dedup_keys.add(key)
-                unique_attributes.append(attr)
-
-        # 6. Build Processing Summary
+        # 5. Build Processing Summary
         elapsed_seconds = round(time.time() - start_time, 3)
         processed_count = sum(1 for s in sources if s.status == SourceStatus.PROCESSED)
 
