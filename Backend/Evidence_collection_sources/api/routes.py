@@ -94,9 +94,24 @@ def run_module4_on_file(filename: str) -> dict:
 
     result = service.process(payload)    
     if hasattr(result, "model_dump"):
-        return result.model_dump()
-    return result.dict()
+        res_dict = result.model_dump()
+    else:
+        res_dict = result.dict()
+
+    # Save output to input_data/Evidence_data
+    evidence_data_dir = input_data_dir / "Evidence_data"
+    evidence_data_dir.mkdir(parents=True, exist_ok=True)
+    
+    req_id = res_dict.get("request_id") or "evidence_output"
+    output_path = evidence_data_dir / f"{req_id}.json"
+    
+    with open(output_path, "w", encoding="utf-8") as out_f:
+        json.dump(res_dict, out_f, indent=2, default=str)
+        
+    print(f"Saved evidence extraction output to: {output_path}")
+
+    return res_dict
 
 
-
-print(run_module4_on_file("REQ-20260816-2AD355E9.json"))
+if __name__ == "__main__":
+    run_module4_on_file("REQ-20260816-2AD355E9.json")

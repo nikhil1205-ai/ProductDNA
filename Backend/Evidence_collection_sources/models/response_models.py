@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from .source_models import Source, SourceInput
 from .extraction_models import ExtractedAttribute
+from .document_models import Document
 
 class ProductIdentity(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -43,6 +44,7 @@ class StructuredEvidence(BaseModel):
     request_id: str
     product_identity: ProductIdentity
     sources: List[Source] = Field(default_factory=list)
+    documents: List[Document] = Field(default_factory=list)
     attributes: List[ExtractedAttribute] = Field(default_factory=list)
     processing_summary: ProcessingSummary = Field(default_factory=ProcessingSummary)
     status: str = Field(default="SUCCESS", description="SUCCESS, PARTIAL_SUCCESS, FAILED")

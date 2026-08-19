@@ -182,6 +182,7 @@ class EvidenceExtractionService:
             request_id=req_id,
             product_identity=identity,
             sources=sources,
+            documents=documents,
             attributes=unique_attributes,
             processing_summary=summary,
             status=status_str

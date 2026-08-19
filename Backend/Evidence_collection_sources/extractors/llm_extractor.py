@@ -1,5 +1,5 @@
 """
-Module 4 LLM & NLP Extractor Implementation
+Module 4 LLM Extractor Implementation
 """
 
 import json
@@ -16,35 +16,36 @@ from ..config.llm_config import llm_config
 class LLMExtractionProviderImpl(LLMExtractionProvider):
     """
     LLM Extraction Provider using Google Gemini REST API or SDK.
-    Enforces strict structured extraction and zero hallucination principles.
+    Enforces strict structured extraction and zero hallucination principles across any industrial product category.
     """
     
     SYSTEM_PROMPT = """
 You are a specialized industrial product data extraction engine.
-Your task is to extract structured technical product attributes from the provided document text.
+Your task is to extract structured technical product attributes from the provided document text across any industrial product category.
 
 STRICT EXTRACTION RULES:
 1. Extract ONLY information explicitly supported by the provided source text.
 2. NEVER invent, hallucinate, or assume missing values.
 3. NEVER infer technical specifications that are not explicitly written.
-4. Extract ANY meaningful product attribute present in the document regardless of product category.
-5. Preserve the exact attribute name as it appears in the text as 'raw_attribute_name'.
-6. Separate value and unit whenever possible.
+4. Extract any meaningful product attribute explicitly present in the source text regardless of product category.
+5. Preserve the original attribute name as 'raw_attribute_name'.
+6. Separate value and unit whenever possible (e.g. value: '380-480', unit: 'V').
 7. For every attribute, preserve the exact snippet of text as 'evidence_text'.
-8. Set extraction confidence between 0.85 and 1.0 based on clarity in source.
-9. If an attribute is missing or ambiguous, omit it completely.
+8. Preserve page and section information when available in the source text.
+9. Set extraction confidence between 0.85 and 1.0 based on clarity in source.
+10. If an attribute is missing or ambiguous, omit it completely.
 
 Return JSON in this format:
 {
   "attributes": [
     {
-      "attribute": "material",
-      "raw_attribute_name": "Housing Material",
-      "value": "Stainless Steel",
-      "unit": null,
+      "attribute": "canonical_attribute_name",
+      "raw_attribute_name": "Original Attribute Name",
+      "value": "extracted value",
+      "unit": "unit if present or null",
       "page": 1,
-      "section": "Specifications",
-      "evidence_text": "Housing Material: Stainless Steel",
+      "section": "Section Name or null",
+      "evidence_text": "Exact supporting snippet from document",
       "extraction_confidence": 0.95
     }
   ]
@@ -66,7 +67,6 @@ Return JSON in this format:
                 if extracted:
                     return extracted
             except Exception as e:
-                # Fail gracefully
                 print(f"LLM Extraction failed: {e}")
                 pass
 
@@ -104,7 +104,7 @@ Return JSON in this format:
         
         results: List[ExtractedAttribute] = []
         for item in parsed.get("attributes", []):
-            attr_key = AttributeMapper.map_attribute(item.get("attribute", ""))
+            attr_key = AttributeMapper.map_attribute(item.get("attribute", item.get("raw_attribute_name", "")))
             results.append(
                 ExtractedAttribute(
                     attribute=attr_key,
@@ -138,3 +138,4 @@ class LLMExtractor(BaseExtractor):
             document_text=document.raw_text,
             source_id=document.source_id
         )
+
