@@ -9,213 +9,62 @@
     "part_number": null,
     "category": null
   },
-  "sources": [
-    {
-      "source_id": "SRC-001",
-      "source_type": "pdf",
-      "source_subtype": "technical_manual",
-      "source_name": "dummy.pdf",
-      "origin": "user_provided",
-      "status": "processed",
-      "metadata": {
-        "url": null,
-        "filename": "dummy.pdf",
-        "content_type": "application/pdf",
-        "size_bytes": 584,
-        "content_hash": "06a4a97b324096ead195888775fea4e27430c11ca421781adff859eded2e45d8",
-        "title": null,
-        "page_count": 1,
-        "retrieved_at": "2026-08-19T10:28:32.575853+00:00"
-      },
-      "error_message": null
-    },
-    {
-      "source_id": "SRC-002",
-      "source_type": "text",
-      "source_subtype": "technical_notes",
-      "source_name": "dummy_data.csv",
-      "origin": "user_provided",
-      "status": "processed",
-      "metadata": {
-        "url": null,
-        "filename": "dummy_data.csv",
-        "content_type": "text/plain",
-        "size_bytes": 121,
-        "content_hash": "b231d64a9b1dbe940cc7f12154d87ca8adee4c27b6855367482b6ebd66479bbf",
-        "title": null,
-        "page_count": null,
-        "retrieved_at": "2026-08-19T10:28:32.584635+00:00"
-      },
-      "error_message": null
-    },
-    {
-      "source_id": "SRC-003",
-      "source_type": "text",
-      "source_subtype": "technical_notes",
-      "source_name": "dummy_specs.txt",
-      "origin": "user_provided",
-      "status": "processed",
-      "metadata": {
-        "url": null,
-        "filename": "dummy_specs.txt",
-        "content_type": "text/plain",
-        "size_bytes": 297,
-        "content_hash": "b5501c1878972d482ef6f7683ca500e7f5342cac85ada8a591de932dd7211435",
-        "title": null,
-        "page_count": null,
-        "retrieved_at": "2026-08-19T10:28:32.584989+00:00"
-      },
-      "error_message": null
-    },
-    {
-      "source_id": "SRC-004",
-      "source_type": "url",
-      "source_subtype": "website",
-      "source_name": "https://new.abb.com/products/3AXD50000038986/acs580-01-145a-4",
-      "origin": "user_provided",
-      "status": "failed",
-      "metadata": {
-        "url": "https://new.abb.com/products/3AXD50000038986/acs580-01-145a-4",
-        "filename": null,
-        "content_type": null,
-        "size_bytes": null,
-        "content_hash": null,
-        "title": null,
-        "page_count": null,
-        "retrieved_at": "2026-08-19T10:28:48.036041+00:00"
-      },
-      "error_message": "Request timed out fetching URL: https://new.abb.com/products/3AXD50000038986/acs580-01-145a-4"
-    },
-    {
-      "source_id": "SRC-005",
-      "source_type": "url",
-      "source_subtype": "website",
-      "source_name": "https://library.e.abb.com/public/dummy_link.pdf",
-      "origin": "user_provided",
-      "status": "failed",
-      "metadata": {
-        "url": "https://library.e.abb.com/public/dummy_link.pdf",
-        "filename": null,
-        "content_type": null,
-        "size_bytes": null,
-        "content_hash": null,
-        "title": null,
-        "page_count": null,
-        "retrieved_at": "2026-08-19T10:28:49.258551+00:00"
-      },
-      "error_message": "HTTP request failed for URL 'https://library.e.abb.com/public/dummy_link.pdf': 403 Client Error: Forbidden for url: https://library.e.abb.com/public/dummy_link.pdf"
-    }
-  ],
-  "documents": [
-    {
-      "document_id": "DOC-SRC-001",
-      "source_id": "SRC-001",
-      "title": "dummy.pdf",
-      "sections": [],
-      "text_blocks": [
-        {
-          "block_id": "BLK-SRC-001-1",
-          "source_id": "SRC-001",
-          "text": "Dummy PDF File",
-          "location": {
-            "page": 1,
-            "section": "Document Overview",
-            "line_start": null,
-            "line_end": null,
-            "table_index": null
-          },
-          "block_type": "paragraph"
-        }
+  "evidence": {
+    "pattern_extractor": {
+      "extractor_data": [
+        "Input voltage: 380-480 V",
+        "Rated power: 75 kW",
+        "Rated current: 145 A",
+        "Mains frequency: 50/60 Hz",
+        "Enclosure class: IP21",
+        "Suitable applications: pumps, fans and conveyors.",
+        "Mounting type: wall-mounted.",
+        "Dimensions: 400x300x200 mm",
+        "Weight: 25 kg"
       ],
-      "tables": [],
-      "raw_text": "--- Page 1 ---\nDummy PDF File\n",
-      "metadata": {
-        "page_count": 1
-      }
+      "sources": [
+        "dummy_specs.txt"
+      ]
     },
-    {
-      "document_id": "DOC-SRC-002",
-      "source_id": "SRC-002",
-      "title": "dummy_data.csv",
-      "sections": [],
-      "text_blocks": [
-        {
-          "block_id": "BLK-SRC-002-1",
-          "source_id": "SRC-002",
-          "text": "Attribute,Value,Unit Input voltage,380-480,V Rated power,75,kW Rated current,145,A Mains frequency,50/60,Hz Weight,25,kg",
-          "location": {
-            "page": null,
-            "section": "General Specifications",
-            "line_start": null,
-            "line_end": null,
-            "table_index": null
-          },
-          "block_type": "paragraph"
-        }
+    "table_extractor": {
+      "extractor_data": [
+        "Input voltage: 380-480 V",
+        "Rated power: 75 kW",
+        "Rated current: 145 A",
+        "Mains frequency: 50/60 Hz",
+        "Weight: 25 kg"
       ],
-      "tables": [],
-      "raw_text": "Attribute,Value,Unit\nInput voltage,380-480,V\nRated power,75,kW\nRated current,145,A\nMains frequency,50/60,Hz\nWeight,25,kg",
-      "metadata": {}
+      "sources": [
+        "dummy_data.csv"
+      ]
     },
-    {
-      "document_id": "DOC-SRC-003",
-      "source_id": "SRC-003",
-      "title": "dummy_specs.txt",
-      "sections": [],
-      "text_blocks": [
-        {
-          "block_id": "BLK-SRC-003-1",
-          "source_id": "SRC-003",
-          "text": "Input voltage: 380-480 V Rated power: 75 kW Rated current: 145 A Mains frequency: 50/60 Hz Enclosure class: IP21 Suitable applications: pumps, fans and conveyors. Mounting type: wall-mounted. Dimensions: 400x300x200 mm Weight: 25 kg",
-          "location": {
-            "page": null,
-            "section": "Technical Characteristics",
-            "line_start": null,
-            "line_end": null,
-            "table_index": null
-          },
-          "block_type": "paragraph"
-        }
-      ],
-      "tables": [],
-      "raw_text": "# Technical Documentation & Specs\n\n## Technical Characteristics\nInput voltage: 380-480 V\nRated power: 75 kW\nRated current: 145 A\nMains frequency: 50/60 Hz\nEnclosure class: IP21\nSuitable applications: pumps, fans and conveyors.\nMounting type: wall-mounted.\nDimensions: 400x300x200 mm\nWeight: 25 kg",
-      "metadata": {}
+    "url_extractor": {
+      "extractor_data": [],
+      "sources": []
+    },
+    "llm_extractor": {
+      "extractor_data": [],
+      "sources": []
     }
-  ],
-  "attributes": [
-    {
-      "attribute": "voltage",
-      "raw_attribute_name": "Input voltage",
-      "value": "380-480 V Rated power: 75 kW Rated current: 145 A Mains frequency: 50/60 Hz Enclosure class: IP21 Suitable applications: pumps, fans and conveyors. Mounting type: wall-mounted. Dimensions: 400x300x200 mm Weight: 25 kg",
-      "unit": null,
-      "source_id": "SRC-003",
-      "page": null,
-      "section": "Technical Characteristics",
-      "evidence_text": "Input voltage: 380-480 V Rated power: 75 kW Rated current: 145 A Mains frequency: 50/60 Hz Enclosure class: IP21 Suitable applications: pumps, fans and conveyors. Mounting type: wall-mounted. Dimensions: 400x300x200 mm Weight: 25 kg",
-      "extraction_method": "pattern_regex",
-      "extraction_confidence": 0.9,
-      "category": null
-    }
-  ],
+  },
   "processing_summary": {
     "sources_received": 5,
     "sources_processed": 3,
-    "attributes_extracted": 1,
+    "evidence_items_extracted": 14,
     "warnings": [
       {
         "source_id": "SRC-004",
         "warning_code": "SOURCE_INTAKE_FAILED",
         "message": "Request timed out fetching URL: https://new.abb.com/products/3AXD50000038986/acs580-01-145a-4",
-        "timestamp": "2026-08-19T10:28:48.036091+00:00"
+        "timestamp": "2026-08-19T13:55:49.673358+00:00"
       },
       {
         "source_id": "SRC-005",
         "warning_code": "SOURCE_INTAKE_FAILED",
         "message": "HTTP request failed for URL 'https://library.e.abb.com/public/dummy_link.pdf': 403 Client Error: Forbidden for url: https://library.e.abb.com/public/dummy_link.pdf",
-        "timestamp": "2026-08-19T10:28:49.259597+00:00"
+        "timestamp": "2026-08-19T13:55:50.887363+00:00"
       }
     ],
-    "processing_time_seconds": 16.687
-  },
-  "status": "PARTIAL_SUCCESS"
+    "processing_time_seconds": 17.14
+  }
 }

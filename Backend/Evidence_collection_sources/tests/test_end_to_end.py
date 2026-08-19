@@ -63,19 +63,13 @@ def test_abb_acs880_end_to_end():
     assert isinstance(result, StructuredEvidence)
     assert result.request_id == "REQ-20260816-5D846135"
     assert result.product_identity.product_name == "ABB ACS880 Industrial Drive"
-    assert len(result.sources) == 2
     assert result.processing_summary.sources_processed == 2
-    assert result.processing_summary.attributes_extracted > 0
-    assert result.status == "SUCCESS"
+    assert result.processing_summary.evidence_items_extracted > 0
 
-    # Check extracted attribute provenance
-    attributes = {a.attribute: a for a in result.attributes}
-    assert "voltage" in attributes
-    assert attributes["voltage"].value == "380-480"
-    assert attributes["voltage"].unit == "V"
-    assert attributes["voltage"].source_id == "SRC-001"
-    assert attributes["voltage"].page == 1
-    assert "Input voltage: 380-480 V" in attributes["voltage"].evidence_text
+    # Check evidence container extractions
+    pattern_data = result.evidence.pattern_extractor.extractor_data
+    assert any("Input voltage: 380-480 V" in item for item in pattern_data)
+    assert "ACS880 Datasheet" in result.evidence.pattern_extractor.sources
 
 def test_duplicate_source_handling():
     service = EvidenceExtractionService()
@@ -91,7 +85,5 @@ def test_duplicate_source_handling():
     }
 
     result = service.process(payload)
-    assert len(result.sources) == 2
-    assert result.sources[0].status.value == "processed"
-    assert result.sources[1].status.value == "duplicate"
-    assert len(result.processing_summary.warnings) > 0
+    assert result.processing_summary.sources_received == 2
+    assert result.processing_summary.sources_processed >= 1

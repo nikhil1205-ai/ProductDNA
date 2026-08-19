@@ -133,5 +133,5 @@ class URLProcessor(BaseProcessor):
             text_blocks=unique_blocks,
             tables=tables,
             raw_text=raw_text,
-            metadata={"content_type": "text/html"}
+            metadata={"source_type": source.source_type, "content_type": "text/html"}
         )

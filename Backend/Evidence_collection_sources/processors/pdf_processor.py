@@ -139,5 +139,5 @@ class PDFProcessor(BaseProcessor):
             text_blocks=unique_blocks,
             tables=tables,
             raw_text=full_text,
-            metadata={"page_count": len(full_text_parts)}
+            metadata={"source_type": source.source_type, "page_count": len(full_text_parts)}
         )

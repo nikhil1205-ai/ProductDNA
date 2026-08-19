@@ -3,7 +3,7 @@ Module 4 Extracted Attribute & Evidence Models
 """
 
 from enum import Enum
-from typing import Optional, Any
+from typing import Optional, Any, List
 from pydantic import BaseModel, Field, ConfigDict
 
 class ExtractionMethod(str, Enum):
@@ -33,3 +33,17 @@ class ExtractedAttribute(BaseModel):
         description="Confidence that extraction accurately represents source content"
     )
     category: Optional[str] = Field(default=None, description="Product category context e.g. Industrial Drives")
+
+class ExtractorEvidenceResult(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    extractor_data: List[str] = Field(default_factory=list)
+    sources: List[str] = Field(default_factory=list)
+
+class EvidenceContainer(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    pattern_extractor: ExtractorEvidenceResult = Field(default_factory=ExtractorEvidenceResult)
+    table_extractor: ExtractorEvidenceResult = Field(default_factory=ExtractorEvidenceResult)
+    url_extractor: ExtractorEvidenceResult = Field(default_factory=ExtractorEvidenceResult)
+    llm_extractor: ExtractorEvidenceResult = Field(default_factory=ExtractorEvidenceResult)

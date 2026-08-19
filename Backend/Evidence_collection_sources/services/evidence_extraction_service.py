@@ -9,7 +9,7 @@ from typing import Dict, Any, List, Optional, Set
 
 from ..models.source_models import SourceInput, Source, SourceType, SourceStatus, SourceOrigin
 from ..models.document_models import Document
-from ..models.extraction_models import ExtractedAttribute
+from ..models.extraction_models import ExtractorEvidenceResult, EvidenceContainer
 from ..models.response_models import (
     StructuredEvidence,
     ProductIdentity,
@@ -28,6 +28,7 @@ from ..processors.text_processor import TextProcessor
 from ..extractors.pattern_extractor import PatternExtractor
 from ..extractors.table_extractor import TableExtractor
 from ..extractors.llm_extractor import LLMExtractor
+from ..extractors.url_extractor import URLExtractor
 
 ENABLE_HASH_DEDUPLICATION = True
 
@@ -35,7 +36,7 @@ class EvidenceExtractionService:
     """
     Main Service Orchestrator for Module 4.
     Receives resolved product information from Module 2 and user-provided sources,
-    processes content, extracts attributes, maps canonical names, and returns Structured Evidence.
+    processes content, extracts evidence text across 4 extractors, and returns Structured Evidence.
     """
 
     def __init__(self):
@@ -53,11 +54,12 @@ class EvidenceExtractionService:
         self.pattern_extractor = PatternExtractor()
         self.table_extractor = TableExtractor()
         self.llm_extractor = LLMExtractor()
+        self.url_extractor = URLExtractor()
 
     def process(self, request_payload: Dict[str, Any]) -> StructuredEvidence:
         """
         Orchestrate Module 4 Pipeline:
-        Intake -> Processing -> Extraction -> Mapping -> Validation -> Output.
+        Intake -> Processing -> Evidence Extraction -> Evidence Output.
         """
         start_time = time.time()
         
@@ -89,13 +91,14 @@ class EvidenceExtractionService:
             elif isinstance(src, SourceInput):
                 user_source_inputs.append(src)
 
-        # 3. Source Intake & Deduplication
+        # 3. Source Intake & Processing
         sources: List[Source] = []
         documents: List[Document] = []
         warnings: List[ProcessingWarning] = []
         seen_hashes: Set[str] = set()
 
         source_counter = 1
+        source_name_map: Dict[str, str] = {}
         
         for src_input in user_source_inputs:
             src_id = f"SRC-{source_counter:03d}"
@@ -110,6 +113,7 @@ class EvidenceExtractionService:
                 collected_source = self.text_collector.collect(src_input, src_id)
 
             sources.append(collected_source)
+            source_name_map[src_id] = collected_source.source_name
 
             # Check collection failures
             if collected_source.status == SourceStatus.FAILED:
@@ -122,7 +126,7 @@ class EvidenceExtractionService:
                 )
                 continue
 
-            # Step C: Document Processing
+            # Step B: Document Processing
             if collected_source.source_type == SourceType.URL:
                 doc = self.url_processor.process(collected_source, src_input)
             elif collected_source.source_type == SourceType.PDF:
@@ -142,23 +146,70 @@ class EvidenceExtractionService:
 
             documents.append(doc)
 
-        # 4. Structured Extraction across all processed documents
-        all_attributes: List[ExtractedAttribute] = []
-        
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            for doc in documents:
-                # Submit tasks for parallel extraction
-                future_pattern = executor.submit(self.pattern_extractor.extract, doc)
-                future_table = executor.submit(self.table_extractor.extract, doc)
-                future_llm = executor.submit(self.llm_extractor.extract, doc)
+        # 4. Evidence Extraction across 4 Extractors
+        pattern_data: List[str] = []
+        pattern_sources: List[str] = []
 
-                # Wait for results and combine them
-                all_attributes.extend(future_pattern.result())
-                all_attributes.extend(future_table.result())
-                all_attributes.extend(future_llm.result())
+        table_data: List[str] = []
+        table_sources: List[str] = []
 
-        # Direct attribute pass-through for prototype (no attribute deduplication)
-        unique_attributes: List[ExtractedAttribute] = all_attributes
+        url_data: List[str] = []
+        url_sources: List[str] = []
+
+        llm_data: List[str] = []
+        llm_sources: List[str] = []
+
+        for doc in documents:
+            src_name = source_name_map.get(doc.source_id, doc.title or doc.source_id)
+
+            # Pattern Extractor
+            p_items = self.pattern_extractor.extract(doc)
+            if p_items:
+                pattern_data.extend(p_items)
+                if src_name not in pattern_sources:
+                    pattern_sources.append(src_name)
+
+            # Table Extractor
+            t_items = self.table_extractor.extract(doc)
+            if t_items:
+                table_data.extend(t_items)
+                if src_name not in table_sources:
+                    table_sources.append(src_name)
+
+            # URL Extractor
+            u_items = self.url_extractor.extract(doc)
+            if u_items:
+                url_data.extend(u_items)
+                if src_name not in url_sources:
+                    url_sources.append(src_name)
+
+            # LLM Extractor
+            l_items = self.llm_extractor.extract(doc)
+            if l_items:
+                llm_data.extend(l_items)
+                if src_name not in llm_sources:
+                    llm_sources.append(src_name)
+
+        evidence = EvidenceContainer(
+            pattern_extractor=ExtractorEvidenceResult(
+                extractor_data=pattern_data,
+                sources=pattern_sources
+            ),
+            table_extractor=ExtractorEvidenceResult(
+                extractor_data=table_data,
+                sources=table_sources
+            ),
+            url_extractor=ExtractorEvidenceResult(
+                extractor_data=url_data,
+                sources=url_sources
+            ),
+            llm_extractor=ExtractorEvidenceResult(
+                extractor_data=llm_data,
+                sources=llm_sources
+            )
+        )
+
+        total_extracted = len(pattern_data) + len(table_data) + len(url_data) + len(llm_data)
 
         # 5. Build Processing Summary
         elapsed_seconds = round(time.time() - start_time, 3)
@@ -167,23 +218,14 @@ class EvidenceExtractionService:
         summary = ProcessingSummary(
             sources_received=len(user_source_inputs),
             sources_processed=processed_count,
-            attributes_extracted=len(unique_attributes),
+            evidence_items_extracted=total_extracted,
             warnings=warnings,
             processing_time_seconds=elapsed_seconds
         )
 
-        status_str = "SUCCESS"
-        if processed_count == 0 and len(user_source_inputs) > 0:
-            status_str = "FAILED"
-        elif len(warnings) > 0:
-            status_str = "PARTIAL_SUCCESS"
-
         return StructuredEvidence(
             request_id=req_id,
             product_identity=identity,
-            sources=sources,
-            documents=documents,
-            attributes=unique_attributes,
-            processing_summary=summary,
-            status=status_str
+            evidence=evidence,
+            processing_summary=summary
         )

@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pydantic import BaseModel, Field, ConfigDict
 
 from .source_models import Source, SourceInput
-from .extraction_models import ExtractedAttribute
+from .extraction_models import ExtractedAttribute, ExtractorEvidenceResult, EvidenceContainer
 from .document_models import Document
 
 class ProductIdentity(BaseModel):
@@ -34,7 +34,7 @@ class ProcessingSummary(BaseModel):
     
     sources_received: int = 0
     sources_processed: int = 0
-    attributes_extracted: int = 0
+    evidence_items_extracted: int = 0
     warnings: List[ProcessingWarning] = Field(default_factory=list)
     processing_time_seconds: float = 0.0
 
@@ -43,11 +43,8 @@ class StructuredEvidence(BaseModel):
     
     request_id: str
     product_identity: ProductIdentity
-    sources: List[Source] = Field(default_factory=list)
-    documents: List[Document] = Field(default_factory=list)
-    attributes: List[ExtractedAttribute] = Field(default_factory=list)
+    evidence: EvidenceContainer = Field(default_factory=EvidenceContainer)
     processing_summary: ProcessingSummary = Field(default_factory=ProcessingSummary)
-    status: str = Field(default="SUCCESS", description="SUCCESS, PARTIAL_SUCCESS, FAILED")
 
 class Module4Request(BaseModel):
     model_config = ConfigDict(extra="ignore")
