@@ -4,6 +4,7 @@ Module 4 Main Service Orchestrator: Evidence Extraction Service
 
 import time
 import uuid
+import concurrent.futures
 from typing import Dict, Any, List, Optional, Set
 
 from ..models.source_models import SourceInput, Source, SourceType, SourceStatus, SourceOrigin
@@ -144,18 +145,17 @@ class EvidenceExtractionService:
         # 4. Structured Extraction across all processed documents
         all_attributes: List[ExtractedAttribute] = []
         
-        for doc in documents:
-            # Pattern Extraction
-            pattern_attrs = self.pattern_extractor.extract(doc)
-            all_attributes.extend(pattern_attrs)
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            for doc in documents:
+                # Submit tasks for parallel extraction
+                future_pattern = executor.submit(self.pattern_extractor.extract, doc)
+                future_table = executor.submit(self.table_extractor.extract, doc)
+                future_llm = executor.submit(self.llm_extractor.extract, doc)
 
-            # Table Extraction
-            table_attrs = self.table_extractor.extract(doc)
-            all_attributes.extend(table_attrs)
-
-            # LLM / Hybrid Extraction
-            llm_attrs = self.llm_extractor.extract(doc)
-            all_attributes.extend(llm_attrs)
+                # Wait for results and combine them
+                all_attributes.extend(future_pattern.result())
+                all_attributes.extend(future_table.result())
+                all_attributes.extend(future_llm.result())
 
         # Direct attribute pass-through for prototype (no attribute deduplication)
         unique_attributes: List[ExtractedAttribute] = all_attributes
