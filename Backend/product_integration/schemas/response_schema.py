@@ -18,6 +18,9 @@ class ProductMetadata(BaseModel):
     checksum: Optional[str] = Field(None, description="SHA-256 hash of file content")
     source_url: Optional[str] = Field(None, description="URL source if URL input")
     retrieved_at: Optional[str] = Field(None, description="ISO timestamp when URL retrieved")
+    row_number: Optional[int] = Field(None, description="1-based row index from source CSV dataset")
+    total_rows: Optional[int] = Field(None, description="Total rows in source CSV dataset")
+    total_columns: Optional[int] = Field(None, description="Total columns in source CSV dataset")
 
 class ProductContent(BaseModel):
     text: Optional[str] = Field(None, description="Extracted raw text content")
@@ -25,8 +28,6 @@ class ProductContent(BaseModel):
     tables: Optional[List[Dict[str, Any]]] = Field(default_factory=list, description="Extracted tabular data")
     structured_data: Optional[Dict[str, Any]] = Field(None, description="Preserved structured JSON data")
     page_count: Optional[int] = Field(None, description="PDF page count if applicable")
-    row_count: Optional[int] = Field(None, description="CSV row count if applicable")
-    column_count: Optional[int] = Field(None, description="CSV column count if applicable")
 
 class SourceRecord(BaseModel):
     row_number: Optional[int] = Field(None, description="1-based row index from source dataset")
@@ -39,9 +40,8 @@ class StandardProductInput(BaseModel):
     identity: ProductIdentity = Field(..., description="Extracted product identity fields")
     source_record: Optional[SourceRecord] = Field(None, description="Raw vs normalized source record for tabular datasets")
     metadata: ProductMetadata = Field(..., description="Technical and source metadata")
-    content: ProductContent = Field(..., description="Extracted content payload")
+    unstructured_data: ProductContent = Field(..., description="Extracted unstructured content payload")
     status: str = Field("READY_FOR_RESOLUTION", description="Processing status for Module 2")
-    resolution_data: Optional[Dict[str, Any]] = Field(None, description="Output from Module 2 Product Resolution")
 
 class StandardBatchResponse(BaseModel):
     status: str = Field("SUCCESS", description="Batch execution status")

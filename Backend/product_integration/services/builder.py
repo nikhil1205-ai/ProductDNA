@@ -28,9 +28,7 @@ def build_standard_product_input(
         title=content_data.get("title"),
         tables=content_data.get("tables", []),
         structured_data=content_data.get("structured_data"),
-        page_count=content_data.get("page_count"),
-        row_count=content_data.get("row_count"),
-        column_count=content_data.get("column_count")
+        page_count=content_data.get("page_count")
     )
 
     source_record_obj = SourceRecord(**source_record_data) if source_record_data else None
@@ -41,7 +39,7 @@ def build_standard_product_input(
         identity=identity_obj,
         source_record=source_record_obj,
         metadata=metadata_obj,
-        content=content_obj,
+        unstructured_data=content_obj,
         status=status
     )
 

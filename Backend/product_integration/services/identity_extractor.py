@@ -45,15 +45,16 @@ def extract_identity_from_dict(data: Dict[str, Any]) -> Dict[str, Optional[str]]
     
     model = get_val("model", "model_number", "model_no", "model_code", "series")
     
-    sku = get_val(
-        "mfg_part_num", "mfg_part_no", "sku", "sku_id",
-        "product_sku", "item_sku", "part_number", "part_no", "mpn"
-    )
+    # SKU: Only populate when source explicitly identifies field as SKU
+    sku = get_val("sku", "sku_id", "product_sku", "item_sku")
     
+    # Part Number: Prefer Mfg_Part_Num or explicit part number fields
     part_number = get_val(
         "mfg_part_num", "mfg_part_no", "part_number", "part_no",
-        "mpn", "part_num", "catalog_number", "part_code", "sku"
+        "mpn", "part_num", "catalog_number", "part_code"
     )
+    if not part_number and sku:
+        part_number = sku
 
     return {
         "product_name": product_name,

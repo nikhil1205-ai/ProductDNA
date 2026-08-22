@@ -3,10 +3,17 @@ import hashlib
 from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 
-def extract_file_metadata(filename: str, file_bytes: bytes, mime_type: Optional[str] = None) -> Dict[str, Any]:
+def extract_file_metadata(
+    filename: str,
+    file_bytes: bytes,
+    mime_type: Optional[str] = None,
+    row_number: Optional[int] = None,
+    total_rows: Optional[int] = None,
+    total_columns: Optional[int] = None
+) -> Dict[str, Any]:
     """
     Generate dynamic metadata for uploaded file inputs.
-    Calculates SHA-256 checksum, file size, extension, and timestamp.
+    Calculates SHA-256 checksum, file size, extension, timestamp, and optional CSV row/column counts.
     """
     ext = os.path.splitext(filename)[1].lower() if filename else ""
     checksum = hashlib.sha256(file_bytes).hexdigest() if file_bytes else None
@@ -19,7 +26,7 @@ def extract_file_metadata(filename: str, file_bytes: bytes, mime_type: Optional[
         else:
             mime_type = "application/octet-stream"
 
-    return {
+    res = {
         "filename": filename,
         "extension": ext,
         "mime_type": mime_type,
@@ -29,6 +36,14 @@ def extract_file_metadata(filename: str, file_bytes: bytes, mime_type: Optional[
         "source_url": None,
         "retrieved_at": None
     }
+    if row_number is not None:
+        res["row_number"] = row_number
+    if total_rows is not None:
+        res["total_rows"] = total_rows
+    if total_columns is not None:
+        res["total_columns"] = total_columns
+
+    return res
 
 def extract_url_metadata(url: str, mime_type: Optional[str] = "text/html") -> Dict[str, Any]:
     """

@@ -40,12 +40,13 @@ if isinstance(res, StandardBatchResponse):
     if res.items:
         row1 = res.items[0]
         print(f"  Request ID    : {row1.request_id}")
+        print(f"  Part Number   : {row1.identity.part_number}")
         print(f"  SKU           : {row1.identity.sku}")
         print(f"  Product Name  : {row1.identity.product_name}")
         print(f"  Brand         : {row1.identity.brand}")
         print(f"  Manufacturer  : {row1.identity.manufacturer}")
         print(f"  Raw E1_Brand  : {row1.source_record.raw.get('E1_Brand')}")
-        print(f"  Norm E1_Brand : {row1.source_record.normalized.get('E1_Brand')}")
+        print(f"  Norm e1_brand : {row1.source_record.normalized.get('e1_brand')}")
         print(f"  Status        : {row1.status}")
     print("==================================================")
     output_dir = backend_dir / "input_data" / "Standard_input"

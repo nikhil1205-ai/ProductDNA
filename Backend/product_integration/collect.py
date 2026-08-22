@@ -2,7 +2,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 
 from .services.validator import (
     validate_file_input,
@@ -22,11 +22,6 @@ from .services.metadata_service import (
 from .services.identity_extractor import extract_identity
 from .services.builder import build_standard_product_input
 from .schemas.response_schema import StandardProductInput, StandardBatchResponse
-
-import sys
-if str(Path(__file__).resolve().parent.parent) not in sys.path:
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from product_resolution_engine.resolution_main import run_resolution
 
 # Output directory path as per project spec
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "input_data" / "Standard_input"
@@ -87,34 +82,29 @@ def integration_module_function(
             raw_row = rr["raw"]
             norm_row = rr["normalized"]
 
-            # Content payload for this specific row
-            content_data = {
-                "text": f"CSV Row {row_num}: {', '.join([f'{k}: {v}' for k, v in norm_row.items() if v is not None])}",
-                "title": f"Row {row_num} from {filename}",
-                "tables": [{
-                    "columns": columns,
-                    "rows": [raw_row]
-                }],
-                "structured_data": norm_row,
-                "row_count": total_rows,
-                "column_count": len(columns)
-            }
+            # Compact content payload for CSV (raw and normalized row data are in source_record)
+            content_data: Dict[str, Any] = {}
 
-            # File metadata
-            metadata_data = extract_file_metadata(filename, file_bytes, mime_type="text/csv")
-            metadata_data["source_row"] = row_num
+            # Dataset-level metadata + row position
+            metadata_data = extract_file_metadata(
+                filename=filename,
+                file_bytes=file_bytes,
+                mime_type="text/csv",
+                row_number=row_num,
+                total_rows=total_rows,
+                total_columns=len(columns)
+            )
 
-            # Conservative Identity Extraction for current row
+            # Source-Derived Identity Extraction for current row
             identity_data = extract_identity(
                 input_type="CSV",
                 content={
                     "normalized_row": norm_row,
-                    "raw_row": raw_row,
-                    "text": content_data["text"]
+                    "raw_row": raw_row
                 }
             )
 
-            # Source record (raw + normalized)
+            # Traceable Source Record
             source_record_data = {
                 "row_number": row_num,
                 "raw": raw_row,
@@ -132,15 +122,7 @@ def integration_module_function(
                 status="READY_FOR_RESOLUTION"
             )
 
-            # Invoke Module 2 Resolution safely
-            try:
-                resolved_dict = run_resolution(standard_obj.model_dump())
-                standard_obj.resolution_data = resolved_dict.get("resolution_data")
-                standard_obj.status = resolved_dict.get("status", standard_obj.status)
-            except Exception as e:
-                print(f"Warning: Module 2 resolution failed for {req_id} (Row {row_num}): {str(e)}")
-
-            # Save individual JSON per product row
+            # Save individual JSON per product row to Backend/input_data/Standard_input/
             file_path = OUTPUT_DIR / f"{req_id}.json"
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(standard_obj.model_dump_json(indent=2))
@@ -229,14 +211,6 @@ def integration_module_function(
         status="READY_FOR_RESOLUTION"
     )
 
-    # Run Module 2 Resolution
-    try:
-        resolved_dict = run_resolution(standard_object.model_dump())
-        standard_object.resolution_data = resolved_dict.get("resolution_data")
-        standard_object.status = resolved_dict.get("status", standard_object.status)
-    except Exception as e:
-        print(f"Warning: Module 2 resolution failed for {request_id}: {str(e)}")
-
     # Save JSON output to Backend/input_data/Standard_input/
     file_path = OUTPUT_DIR / f"{request_id}.json"
     with open(file_path, "w", encoding="utf-8") as f:
@@ -266,5 +240,6 @@ if __name__ == "__main__":
             print(f"Standardized Product JSON files saved to: {OUTPUT_DIR}")
     else:
         print(f"Sample CSV dataset file not found at: {sample_csv_path}")
+
 
 
