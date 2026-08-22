@@ -87,14 +87,68 @@ def test_suite():
     except ValueError as ve:
         print(f"SUCCESS: Caught expected validation error -> {ve}")
 
+    # Test 7: Unihack 6-Column Catalogue Dataset Test with Placeholders
+    print("\n--- Test 7: Unihack 6-Column Catalogue Dataset ---")
+    unihack_csv_bytes = (
+        "Mfg_Part_Num,Part_Desc,E1_Brand,Unilog_Brand,DIB_Brand,Part_Manuf\n"
+        "DCM200B,DCM200B Dewalt 1/2in x 18in - Band File,-- Unbranded --,-- No Unilog Brand --,DEWALT,Black & Decker/dewlt (2585)\n"
+        "DCG410B,DCG410B Dewalt Cut Off Tool,-- Unbranded --,-- No Unilog Brand --,-- No DIB Brand --,DEWALT (1234)\n"
+    ).encode("utf-8")
+
+    res7 = integration_module_function(
+        file_bytes=unihack_csv_bytes,
+        filename="unihack_sample.csv",
+        return_batch=True
+    )
+    print(f"Batch status: {res7.status}")
+    print(f"Total Rows: {res7.total_rows}")
+    print(f"Detected Headers: {res7.detected_headers}")
+    assert res7.total_rows == 2
+    assert len(res7.items) == 2
+
+    # Verify Row 1 (DCM200B)
+    item1 = res7.items[0]
+    print(f"Row 1 Request ID: {item1.request_id}")
+    print(f"Row 1 Identity: {item1.identity.model_dump()}")
+    print(f"Row 1 Source Record: {item1.source_record.model_dump()}")
+    assert item1.identity.sku == "DCM200B"
+    assert item1.identity.brand == "DEWALT"
+    assert item1.source_record.raw["E1_Brand"] == "-- Unbranded --"
+    assert item1.source_record.normalized["E1_Brand"] is None
+    assert item1.source_record.normalized["DIB_Brand"] == "DEWALT"
+
+    # Verify Row 2 (DCG410B)
+    item2 = res7.items[1]
+    print(f"Row 2 Identity: {item2.identity.model_dump()}")
+    assert item2.identity.sku == "DCG410B"
+    assert item2.identity.manufacturer == "DEWALT (1234)"
+
+    # Test 8: Dynamic 10-Column CSV Dataset
+    print("\n--- Test 8: Dynamic 10-Column CSV Dataset ---")
+    dynamic_csv_bytes = (
+        "SKU,Product Name,Brand,Voltage,Weight,Custom_Field_1,Category,Warehouse_Bin,Supplier,Notes\n"
+        "MOT-100,3-Phase Induction Motor,ABB,415V,25kg,CUST-999,Motors,BIN-12,ABB Global,High efficiency\n"
+    ).encode("utf-8")
+
+    res8 = integration_module_function(
+        file_bytes=dynamic_csv_bytes,
+        filename="dynamic_motors.csv"
+    )
+    # Single row returns StandardProductInput directly
+    print(f"Request ID: {res8.request_id}")
+    print(f"Headers preserved in raw: {list(res8.source_record.raw.keys())}")
+    assert "Custom_Field_1" in res8.source_record.raw
+    assert res8.source_record.raw["Custom_Field_1"] == "CUST-999"
+    assert res8.identity.sku == "MOT-100"
+    assert res8.identity.brand == "ABB"
+
     # Check output directory
     output_dir = backend_dir / "input_data" / "Standard_input"
     saved_files = list(output_dir.glob("REQ-*.json"))
     print(f"\nTotal Standardized JSON files saved in {output_dir}: {len(saved_files)}")
-    for sf in saved_files:
-        print(f"  - {sf.name}")
 
     print("\n=== All Module 1 Tests Completed Successfully! ===")
 
 if __name__ == "__main__":
     test_suite()
+

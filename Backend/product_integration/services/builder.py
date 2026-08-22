@@ -1,9 +1,10 @@
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from ..schemas.response_schema import (
     StandardProductInput,
     ProductIdentity,
     ProductMetadata,
-    ProductContent
+    ProductContent,
+    SourceRecord
 )
 
 def build_standard_product_input(
@@ -12,10 +13,11 @@ def build_standard_product_input(
     identity_data: Dict[str, Any],
     metadata_data: Dict[str, Any],
     content_data: Dict[str, Any],
+    source_record_data: Optional[Dict[str, Any]] = None,
     status: str = "READY_FOR_RESOLUTION"
 ) -> StandardProductInput:
     """
-    Construct the standardized Product Input Object from identity, metadata, and content dictionaries.
+    Construct the standardized Product Input Object from identity, metadata, content, and source record dictionaries.
     """
     identity_obj = ProductIdentity(**identity_data)
     metadata_obj = ProductMetadata(**metadata_data)
@@ -31,11 +33,15 @@ def build_standard_product_input(
         column_count=content_data.get("column_count")
     )
 
+    source_record_obj = SourceRecord(**source_record_data) if source_record_data else None
+
     return StandardProductInput(
         request_id=request_id,
         input_type=input_type,
         identity=identity_obj,
+        source_record=source_record_obj,
         metadata=metadata_obj,
         content=content_obj,
         status=status
     )
+

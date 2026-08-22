@@ -1,0 +1,86 @@
+{
+  "request_id": "REQ-20260822-5BC8A772",
+  "input_type": "CSV",
+  "identity": {
+    "product_name": "1x8-12' Malted Barley - Trex Select 2.0 Fascia",
+    "brand": "TREX",
+    "manufacturer": "Boise Cascade Building Materials (BOICA)",
+    "model": null,
+    "sku": "543005916",
+    "part_number": "543005916"
+  },
+  "source_record": {
+    "row_number": 264,
+    "raw": {
+      "Mfg_Part_Num": "543005916",
+      "Part_Desc": "1x8-12' Malted Barley - Trex Select 2.0 Fascia",
+      "E1_Brand": "TREX",
+      "Unilog_Brand": "-- No Unilog Brand --",
+      "DIB_Brand": "-- No DIB Brand --",
+      "Part_Manuf": "Boise Cascade Building Materials (BOICA)"
+    },
+    "normalized": {
+      "Mfg_Part_Num": "543005916",
+      "Part_Desc": "1x8-12' Malted Barley - Trex Select 2.0 Fascia",
+      "E1_Brand": "TREX",
+      "Unilog_Brand": null,
+      "DIB_Brand": null,
+      "Part_Manuf": "Boise Cascade Building Materials (BOICA)"
+    }
+  },
+  "metadata": {
+    "filename": "Unihack_ Sample Dataset - Input.csv",
+    "extension": ".csv",
+    "mime_type": "text/csv",
+    "size_bytes": 128673,
+    "created_at": "2026-08-22T05:47:24.246709+00:00",
+    "checksum": "ed41b50e26c83d0859d563028107fa81a799b5b4b9e3d5743eb846dbd3c7b862",
+    "source_url": null,
+    "retrieved_at": null
+  },
+  "content": {
+    "text": "CSV Row 264: Mfg_Part_Num: 543005916, Part_Desc: 1x8-12' Malted Barley - Trex Select 2.0 Fascia, E1_Brand: TREX, Part_Manuf: Boise Cascade Building Materials (BOICA)",
+    "title": "Row 264 from Unihack_ Sample Dataset - Input.csv",
+    "tables": [
+      {
+        "columns": [
+          "Mfg_Part_Num",
+          "Part_Desc",
+          "E1_Brand",
+          "Unilog_Brand",
+          "DIB_Brand",
+          "Part_Manuf"
+        ],
+        "rows": [
+          {
+            "Mfg_Part_Num": "543005916",
+            "Part_Desc": "1x8-12' Malted Barley - Trex Select 2.0 Fascia",
+            "E1_Brand": "TREX",
+            "Unilog_Brand": "-- No Unilog Brand --",
+            "DIB_Brand": "-- No DIB Brand --",
+            "Part_Manuf": "Boise Cascade Building Materials (BOICA)"
+          }
+        ]
+      }
+    ],
+    "structured_data": {
+      "Mfg_Part_Num": "543005916",
+      "Part_Desc": "1x8-12' Malted Barley - Trex Select 2.0 Fascia",
+      "E1_Brand": "TREX",
+      "Unilog_Brand": null,
+      "DIB_Brand": null,
+      "Part_Manuf": "Boise Cascade Building Materials (BOICA)"
+    },
+    "page_count": null,
+    "row_count": 1000,
+    "column_count": 6
+  },
+  "status": "UNRESOLVED",
+  "resolution_data": {
+    "status": "UNRESOLVED",
+    "match_type": "NO_MATCH",
+    "confidence": 0.0,
+    "product_id": null,
+    "candidates": []
+  }
+}

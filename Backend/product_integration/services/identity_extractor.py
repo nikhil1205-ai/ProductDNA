@@ -12,29 +12,48 @@ KNOWN_BRANDS = [
 
 def extract_identity_from_dict(data: Dict[str, Any]) -> Dict[str, Optional[str]]:
     """
-    Extract identity from structured JSON keys (case-insensitive matching).
+    Extract identity candidates from structured JSON keys or CSV row records (case-insensitive & alias-aware).
     """
-    normalized_keys = {str(k).lower().replace(" ", "_").replace("-", "_"): v for k, v in data.items()}
+    normalized_keys = {
+        str(k).lower().strip().replace(" ", "_").replace("-", "_"): v
+        for k, v in data.items()
+    }
 
     def get_val(*key_options: str) -> Optional[str]:
         for opt in key_options:
             val = normalized_keys.get(opt)
-            if val is not None and str(val).strip():
-                return str(val).strip()
+            if val is not None:
+                val_str = str(val).strip()
+                if val_str and val_str.lower() not in {"null", "none", "-", "n/a", "na"}:
+                    return val_str
         return None
 
-    product_name = get_val("product_name", "productname", "title", "name", "item_name", "description")
-    brand = get_val("brand", "brand_name", "make", "vendor")
-    manufacturer = get_val("manufacturer", "manufacturer_name", "mfr")
+    product_name = get_val(
+        "product_name", "productname", "part_desc", "part_description",
+        "title", "name", "item_name", "description"
+    )
+    
+    # Brand candidates: Check multiple possible brand columns (e.g. DIB_Brand, E1_Brand, Brand, Make)
+    brand = get_val(
+        "dib_brand", "e1_brand", "unilog_brand", "brand",
+        "brand_name", "make", "vendor"
+    )
+    
+    manufacturer = get_val(
+        "part_manuf", "manufacturer", "manufacturer_name", "mfr", "vendor"
+    )
+    
     model = get_val("model", "model_number", "model_no", "model_code", "series")
-    sku = get_val("sku", "sku_id", "product_sku", "item_sku")
-    part_number = get_val("part_number", "part_no", "mpn", "part_num", "catalog_number", "part_code")
-
-    # Cross fill brand and manufacturer if one is missing
-    if not brand and manufacturer:
-        brand = manufacturer
-    elif not manufacturer and brand:
-        manufacturer = brand
+    
+    sku = get_val(
+        "mfg_part_num", "mfg_part_no", "sku", "sku_id",
+        "product_sku", "item_sku", "part_number", "part_no", "mpn"
+    )
+    
+    part_number = get_val(
+        "mfg_part_num", "mfg_part_no", "part_number", "part_no",
+        "mpn", "part_num", "catalog_number", "part_code", "sku"
+    )
 
     return {
         "product_name": product_name,
@@ -154,7 +173,6 @@ def extract_identity(
     # 1. Structured JSON content
     if input_type == "JSON" and content.get("structured_data"):
         dict_identity = extract_identity_from_dict(content["structured_data"])
-        # If product name or brand is missing, attempt text extraction on summary text
         text_identity = extract_identity_from_text(content.get("text"))
         return {
             "product_name": dict_identity.get("product_name") or text_identity.get("product_name"),
@@ -165,21 +183,25 @@ def extract_identity(
             "part_number": dict_identity.get("part_number") or text_identity.get("part_number"),
         }
 
-    # 2. CSV content (first row or headers)
-    if input_type == "CSV" and content.get("rows"):
-        first_row = content["rows"][0]
-        row_identity = extract_identity_from_dict(first_row)
-        text_identity = extract_identity_from_text(content.get("summary_text"))
-        return {
-            "product_name": row_identity.get("product_name") or text_identity.get("product_name"),
-            "brand": row_identity.get("brand") or text_identity.get("brand"),
-            "manufacturer": row_identity.get("manufacturer") or text_identity.get("manufacturer"),
-            "model": row_identity.get("model") or text_identity.get("model"),
-            "sku": row_identity.get("sku") or text_identity.get("sku"),
-            "part_number": row_identity.get("part_number") or text_identity.get("part_number"),
-        }
+    # 2. CSV content (from normalized row dict or raw row dict)
+    if input_type == "CSV":
+        row_dict = content.get("normalized_row") or content.get("raw_row")
+        if not row_dict and content.get("rows"):
+            row_dict = content["rows"][0]
+        if row_dict:
+            row_identity = extract_identity_from_dict(row_dict)
+            text_identity = extract_identity_from_text(content.get("summary_text") or content.get("text"))
+            return {
+                "product_name": row_identity.get("product_name") or text_identity.get("product_name"),
+                "brand": row_identity.get("brand") or text_identity.get("brand"),
+                "manufacturer": row_identity.get("manufacturer") or text_identity.get("manufacturer"),
+                "model": row_identity.get("model") or text_identity.get("model"),
+                "sku": row_identity.get("sku") or text_identity.get("sku"),
+                "part_number": row_identity.get("part_number") or text_identity.get("part_number"),
+            }
 
     # 3. PDF, URL, or PRODUCT_NAME raw text
     text_to_analyze = content.get("text") or raw_input_text or ""
     title_to_analyze = content.get("title")
     return extract_identity_from_text(text_to_analyze, title=title_to_analyze)
+

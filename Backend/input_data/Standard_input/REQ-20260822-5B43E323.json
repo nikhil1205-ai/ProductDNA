@@ -1,0 +1,86 @@
+{
+  "request_id": "REQ-20260822-5B43E323",
+  "input_type": "CSV",
+  "identity": {
+    "product_name": "DCD799B Dewalt Drill",
+    "brand": null,
+    "manufacturer": "Black & Decker/dewlt (2585)",
+    "model": "DCD799B",
+    "sku": "DCD799B",
+    "part_number": "DCD799B"
+  },
+  "source_record": {
+    "row_number": 815,
+    "raw": {
+      "Mfg_Part_Num": "DCD799B",
+      "Part_Desc": "DCD799B Dewalt Drill",
+      "E1_Brand": "-- Unbranded --",
+      "Unilog_Brand": "-- No Unilog Brand --",
+      "DIB_Brand": "-- No DIB Brand --",
+      "Part_Manuf": "Black & Decker/dewlt (2585)"
+    },
+    "normalized": {
+      "Mfg_Part_Num": "DCD799B",
+      "Part_Desc": "DCD799B Dewalt Drill",
+      "E1_Brand": null,
+      "Unilog_Brand": null,
+      "DIB_Brand": null,
+      "Part_Manuf": "Black & Decker/dewlt (2585)"
+    }
+  },
+  "metadata": {
+    "filename": "Unihack_ Sample Dataset - Input.csv",
+    "extension": ".csv",
+    "mime_type": "text/csv",
+    "size_bytes": 128673,
+    "created_at": "2026-08-22T05:47:26.802852+00:00",
+    "checksum": "ed41b50e26c83d0859d563028107fa81a799b5b4b9e3d5743eb846dbd3c7b862",
+    "source_url": null,
+    "retrieved_at": null
+  },
+  "content": {
+    "text": "CSV Row 815: Mfg_Part_Num: DCD799B, Part_Desc: DCD799B Dewalt Drill, Part_Manuf: Black & Decker/dewlt (2585)",
+    "title": "Row 815 from Unihack_ Sample Dataset - Input.csv",
+    "tables": [
+      {
+        "columns": [
+          "Mfg_Part_Num",
+          "Part_Desc",
+          "E1_Brand",
+          "Unilog_Brand",
+          "DIB_Brand",
+          "Part_Manuf"
+        ],
+        "rows": [
+          {
+            "Mfg_Part_Num": "DCD799B",
+            "Part_Desc": "DCD799B Dewalt Drill",
+            "E1_Brand": "-- Unbranded --",
+            "Unilog_Brand": "-- No Unilog Brand --",
+            "DIB_Brand": "-- No DIB Brand --",
+            "Part_Manuf": "Black & Decker/dewlt (2585)"
+          }
+        ]
+      }
+    ],
+    "structured_data": {
+      "Mfg_Part_Num": "DCD799B",
+      "Part_Desc": "DCD799B Dewalt Drill",
+      "E1_Brand": null,
+      "Unilog_Brand": null,
+      "DIB_Brand": null,
+      "Part_Manuf": "Black & Decker/dewlt (2585)"
+    },
+    "page_count": null,
+    "row_count": 1000,
+    "column_count": 6
+  },
+  "status": "UNRESOLVED",
+  "resolution_data": {
+    "status": "UNRESOLVED",
+    "match_type": "NO_MATCH",
+    "confidence": 0.0,
+    "product_id": null,
+    "candidates": []
+  }
+}

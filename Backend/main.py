@@ -1,7 +1,7 @@
 import sys
 import json
 from pathlib import Path
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, Union
 
 # Add Backend root directory to sys.path
 backend_dir = Path(__file__).resolve().parent
@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from product_integration.collect import integration_module_function
 from product_integration.schemas.input_schema import ProductInputRequest
-from product_integration.schemas.response_schema import StandardProductInput, StandardErrorResponse
+from product_integration.schemas.response_schema import StandardProductInput, StandardBatchResponse, StandardErrorResponse
 
 from Evidence_collection_sources.api.routes import router as module4_router
 
@@ -47,7 +47,7 @@ def read_root():
 
 @app.post(
     "/api/product-input",
-    response_model=StandardProductInput,
+    response_model=Union[StandardProductInput, StandardBatchResponse],
     responses={400: {"model": StandardErrorResponse}, 422: {"model": StandardErrorResponse}}
 )
 async def process_product_input(
@@ -61,7 +61,7 @@ async def process_product_input(
 ):
     """
     Main Product Intake Endpoint. Supports both multipart/form-data (files, forms) and application/json requests.
-    Processes input through Module 1 pipeline and returns a Standard Product Input Object.
+    Processes input through Module 1 pipeline and returns a Standard Product Input Object or Batch Response.
     """
     file_bytes: Optional[bytes] = None
     filename: Optional[str] = None
@@ -118,7 +118,8 @@ async def process_product_input(
             url_str=target_url,
             json_data=parsed_json_data,
             input_text=target_input_text,
-            explicit_type=input_type
+            explicit_type=input_type,
+            return_batch=True
         )
         return result
     except ValueError as ve:

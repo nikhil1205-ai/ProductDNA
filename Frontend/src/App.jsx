@@ -32,18 +32,41 @@ const MODULE4_API_URL = 'http://localhost:8000/api/evidence/extract';
 
 export default function App() {
   // Top-level Navigation: 'MODULE1' or 'MODULE4'
-  const [activeModule, setActiveModule] = useState('MODULE4');
+  const [activeModule, setActiveModule] = useState('MODULE1');
 
   // --- MODULE 1 STATE ---
-  const [m1Tab, setM1Tab] = useState('PDF');
+  const [m1Tab, setM1Tab] = useState('CSV');
   const [m1File, setM1File] = useState(null);
   const [m1ProductName, setM1ProductName] = useState('');
   const [m1Url, setM1Url] = useState('');
   const [m1JsonText, setM1JsonText] = useState('');
   const [m1Loading, setM1Loading] = useState(false);
   const [m1Response, setM1Response] = useState(null);
+  const [m1SelectedRowIndex, setM1SelectedRowIndex] = useState(0);
+  const [m1DetectedHeaders, setM1DetectedHeaders] = useState([]);
   const [m1Error, setM1Error] = useState(null);
   const [m1Copied, setM1Copied] = useState(false);
+
+  const handleCsvFileChange = (e) => {
+    const file = e.target.files?.[0];
+    setM1File(file || null);
+    setM1Response(null);
+    setM1Error(null);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const text = evt.target?.result;
+        if (typeof text === 'string') {
+          const firstLine = text.split('\n')[0];
+          const headers = firstLine.split(',').map(h => h.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+          setM1DetectedHeaders(headers);
+        }
+      };
+      reader.readAsText(file.slice(0, 4096));
+    } else {
+      setM1DetectedHeaders([]);
+    }
+  };
 
   // --- MODULE 4 STATE ---
   const [m4ProductName, setM4ProductName] = useState('ABB ACS880 Industrial Drive');
@@ -820,22 +843,23 @@ export default function App() {
           <div className="space-y-6">
             <section className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 rounded-2xl p-6 border border-slate-800 shadow-xl relative overflow-hidden">
               <div className="relative z-10 space-y-2">
-                <h2 className="text-2xl font-bold text-white tracking-tight">Product Intake Studio</h2>
+                <h2 className="text-2xl font-bold text-white tracking-tight">Product Intake Studio (Module 1)</h2>
                 <p className="text-sm text-slate-300 max-w-3xl leading-relaxed">
-                  Convert raw product inputs into standardized <code className="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 text-xs font-mono border border-slate-700">StandardProductInput</code> objects for Module 2 Resolution.
+                  Ingest raw product datasets (CSV, PDF) row-by-row into standardized <code className="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 text-xs font-mono border border-slate-700">StandardProductInput</code> objects preserving raw & normalized records.
                 </p>
               </div>
             </section>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-6 space-y-6">
+              {/* Left Form Column */}
+              <div className="lg:col-span-5 space-y-6">
                 <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-6 shadow-xl space-y-6">
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">1. Select Input Type</label>
                     <div className="grid grid-cols-5 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
                       {[
-                        { id: 'PDF', label: 'PDF', icon: FileText },
                         { id: 'CSV', label: 'CSV', icon: FileSpreadsheet },
+                        { id: 'PDF', label: 'PDF', icon: FileText },
                         { id: 'URL', label: 'URL', icon: LinkIcon },
                         { id: 'JSON', label: 'JSON', icon: Code },
                         { id: 'PRODUCT_NAME', label: 'Name', icon: Tag }
@@ -845,7 +869,13 @@ export default function App() {
                           <button
                             key={tab.id}
                             type="button"
-                            onClick={() => { setM1Tab(tab.id); setM1Error(null); setM1File(null); }}
+                            onClick={() => {
+                              setM1Tab(tab.id);
+                              setM1Error(null);
+                              setM1File(null);
+                              setM1DetectedHeaders([]);
+                              setM1Response(null);
+                            }}
                             className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-lg text-xs font-semibold transition-all ${
                               m1Tab === tab.id
                                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
@@ -861,19 +891,37 @@ export default function App() {
                   </div>
 
                   <form onSubmit={handleM1Submit} className="space-y-5">
-                    {m1Tab === 'PDF' && (
-                      <div className="border-2 border-dashed border-slate-700 hover:border-indigo-500/50 rounded-xl p-6 text-center bg-slate-950/50 relative cursor-pointer">
-                        <input type="file" accept=".pdf" onChange={(e) => setM1File(e.target.files?.[0])} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
-                        <UploadCloud className="w-10 h-10 text-indigo-400 mx-auto mb-2" />
-                        <p className="text-sm font-medium text-slate-200">{m1File?.name || 'Click or Drag PDF file here'}</p>
+                    {m1Tab === 'CSV' && (
+                      <div className="space-y-3">
+                        <div className="border-2 border-dashed border-slate-700 hover:border-emerald-500/50 rounded-xl p-6 text-center bg-slate-950/50 relative cursor-pointer">
+                          <input type="file" accept=".csv" onChange={handleCsvFileChange} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                          <FileSpreadsheet className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
+                          <p className="text-sm font-medium text-slate-200">{m1File?.name || 'Click or Drag CSV file here'}</p>
+                          <p className="text-xs text-slate-500 mt-1">Supports Unihack 6-column catalogue CSV or any custom product CSV dataset</p>
+                        </div>
+
+                        {m1DetectedHeaders.length > 0 && (
+                          <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                              Detected Headers ({m1DetectedHeaders.length} columns)
+                            </span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {m1DetectedHeaders.map((col, idx) => (
+                                <span key={idx} className="px-2 py-0.5 rounded bg-slate-800 text-[11px] font-mono text-emerald-300 border border-slate-700">
+                                  {col}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
-                    {m1Tab === 'CSV' && (
+                    {m1Tab === 'PDF' && (
                       <div className="border-2 border-dashed border-slate-700 hover:border-indigo-500/50 rounded-xl p-6 text-center bg-slate-950/50 relative cursor-pointer">
-                        <input type="file" accept=".csv" onChange={(e) => setM1File(e.target.files?.[0])} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
-                        <FileSpreadsheet className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
-                        <p className="text-sm font-medium text-slate-200">{m1File?.name || 'Click or Drag CSV file here'}</p>
+                        <input type="file" accept=".pdf" onChange={(e) => { setM1File(e.target.files?.[0]); setM1Response(null); }} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                        <UploadCloud className="w-10 h-10 text-indigo-400 mx-auto mb-2" />
+                        <p className="text-sm font-medium text-slate-200">{m1File?.name || 'Click or Drag PDF file here'}</p>
                       </div>
                     )}
 
@@ -896,19 +944,154 @@ export default function App() {
                       </div>
                     )}
 
-                    <button type="submit" disabled={m1Loading} className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg flex items-center justify-center space-x-2">
+                    <button type="submit" disabled={m1Loading} className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg flex items-center justify-center space-x-2 transition-all">
                       {m1Loading ? <RefreshCw className="w-4 h-4 animate-spin text-white" /> : <span>Process Product Input</span>}
                     </button>
                   </form>
                 </div>
               </div>
 
-              <div className="lg:col-span-6 space-y-6">
-                {m1Response && (
+              {/* Right Output / Results Column */}
+              <div className="lg:col-span-7 space-y-6">
+                {!m1Response && !m1Loading && (
+                  <div className="bg-slate-900/60 rounded-2xl border border-slate-800/80 p-12 text-center text-slate-500 space-y-3">
+                    <Box className="w-12 h-12 text-slate-700 mx-auto" />
+                    <h3 className="text-sm font-semibold text-slate-400">Ready for Product Intake</h3>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                      Upload a CSV dataset or PDF document to extract candidate product identities and view generated StandardProductInput objects.
+                    </p>
+                  </div>
+                )}
+
+                {/* Batch Response View (CSV multi-row) */}
+                {m1Response && m1Response.items && (
+                  <div className="space-y-6">
+                    {/* Batch Summary Cards */}
+                    <div className="grid grid-cols-4 gap-3">
+                      <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-center">
+                        <span className="text-[10px] font-semibold uppercase text-slate-400 block">Total Rows</span>
+                        <span className="text-xl font-bold text-slate-100">{m1Response.total_rows}</span>
+                      </div>
+                      <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-center">
+                        <span className="text-[10px] font-semibold uppercase text-slate-400 block">Processed</span>
+                        <span className="text-xl font-bold text-emerald-400">{m1Response.processed_count}</span>
+                      </div>
+                      <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-center">
+                        <span className="text-[10px] font-semibold uppercase text-slate-400 block">Successful</span>
+                        <span className="text-xl font-bold text-indigo-400">{m1Response.successful_count}</span>
+                      </div>
+                      <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 text-center">
+                        <span className="text-[10px] font-semibold uppercase text-slate-400 block">Failed</span>
+                        <span className="text-xl font-bold text-rose-400">{m1Response.failed_count}</span>
+                      </div>
+                    </div>
+
+                    {/* Products Row Table */}
+                    <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-5 shadow-xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                          Processed Product Records ({m1Response.items.length})
+                        </h4>
+                        <span className="text-xs text-slate-500 font-mono">Click a row to view JSON</span>
+                      </div>
+
+                      <div className="border border-slate-800 rounded-xl overflow-hidden max-h-[240px] overflow-y-auto">
+                        <table className="w-full text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="bg-slate-950 text-slate-400 border-b border-slate-800 font-mono text-[11px]">
+                              <th className="px-3 py-2">Row</th>
+                              <th className="px-3 py-2">SKU / Part #</th>
+                              <th className="px-3 py-2">Desc / Product Name</th>
+                              <th className="px-3 py-2">Brand</th>
+                              <th className="px-3 py-2">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-800/60 font-mono">
+                            {m1Response.items.map((item, idx) => {
+                              const isSelected = idx === m1SelectedRowIndex;
+                              const rowNum = item.source_record?.row_number || idx + 1;
+                              return (
+                                <tr
+                                  key={item.request_id}
+                                  onClick={() => setM1SelectedRowIndex(idx)}
+                                  className={`cursor-pointer transition-colors ${
+                                    isSelected ? 'bg-indigo-950/60 border-l-2 border-indigo-500' : 'hover:bg-slate-800/50'
+                                  }`}
+                                >
+                                  <td className="px-3 py-2 font-semibold text-slate-400">#{rowNum}</td>
+                                  <td className="px-3 py-2 font-semibold text-indigo-300">{item.identity?.sku || item.identity?.part_number || '-'}</td>
+                                  <td className="px-3 py-2 text-slate-300 max-w-[200px] truncate">{item.identity?.product_name || '-'}</td>
+                                  <td className="px-3 py-2 text-slate-400">{item.identity?.brand || '-'}</td>
+                                  <td className="px-3 py-2">
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                      item.status === 'READY_FOR_RESOLUTION' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400'
+                                    }`}>
+                                      {item.status}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Selected Row JSON Inspector */}
+                    {m1Response.items[m1SelectedRowIndex] && (
+                      <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-5 shadow-xl space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Code className="w-4 h-4 text-indigo-400" />
+                            <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                              StandardProductInput JSON — Row #{m1Response.items[m1SelectedRowIndex].source_record?.row_number || (m1SelectedRowIndex + 1)} ({m1Response.items[m1SelectedRowIndex].request_id})
+                            </h4>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(JSON.stringify(m1Response.items[m1SelectedRowIndex], null, 2));
+                              setM1Copied(true);
+                              setTimeout(() => setM1Copied(false), 2000);
+                            }}
+                            className="inline-flex items-center space-x-1 text-xs px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                          >
+                            {m1Copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+                            <span>{m1Copied ? 'Copied' : 'Copy JSON'}</span>
+                          </button>
+                        </div>
+                        <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 max-h-[350px] overflow-auto">
+                          <pre className="text-xs font-mono text-indigo-200 leading-relaxed whitespace-pre-wrap">
+                            {JSON.stringify(m1Response.items[m1SelectedRowIndex], null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Single Item Response View (PDF, URL, JSON, PRODUCT_NAME) */}
+                {m1Response && !m1Response.items && (
                   <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-5 shadow-xl space-y-3">
-                    <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Module 1 Standard Product Input JSON</h4>
-                    <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 max-h-[400px] overflow-auto">
-                      <pre className="text-xs font-mono text-indigo-200 leading-relaxed whitespace-pre-wrap">{JSON.stringify(m1Response, null, 2)}</pre>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Module 1 Standard Product Input JSON</h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(JSON.stringify(m1Response, null, 2));
+                          setM1Copied(true);
+                          setTimeout(() => setM1Copied(false), 2000);
+                        }}
+                        className="inline-flex items-center space-x-1 text-xs px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                      >
+                        {m1Copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+                        <span>{m1Copied ? 'Copied' : 'Copy JSON'}</span>
+                      </button>
+                    </div>
+                    <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 max-h-[450px] overflow-auto">
+                      <pre className="text-xs font-mono text-indigo-200 leading-relaxed whitespace-pre-wrap">
+                        {JSON.stringify(m1Response, null, 2)}
+                      </pre>
                     </div>
                   </div>
                 )}

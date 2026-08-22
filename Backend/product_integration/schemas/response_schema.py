@@ -28,15 +28,32 @@ class ProductContent(BaseModel):
     row_count: Optional[int] = Field(None, description="CSV row count if applicable")
     column_count: Optional[int] = Field(None, description="CSV column count if applicable")
 
+class SourceRecord(BaseModel):
+    row_number: Optional[int] = Field(None, description="1-based row index from source dataset")
+    raw: Dict[str, Any] = Field(default_factory=dict, description="Complete original row key-value data")
+    normalized: Dict[str, Any] = Field(default_factory=dict, description="Row data with placeholders mapped to null")
+
 class StandardProductInput(BaseModel):
     request_id: str = Field(..., description="Unique request identifier REQ-...")
     input_type: str = Field(..., description="Input type: PDF, CSV, URL, JSON, PRODUCT_NAME")
     identity: ProductIdentity = Field(..., description="Extracted product identity fields")
+    source_record: Optional[SourceRecord] = Field(None, description="Raw vs normalized source record for tabular datasets")
     metadata: ProductMetadata = Field(..., description="Technical and source metadata")
     content: ProductContent = Field(..., description="Extracted content payload")
     status: str = Field("READY_FOR_RESOLUTION", description="Processing status for Module 2")
     resolution_data: Optional[Dict[str, Any]] = Field(None, description="Output from Module 2 Product Resolution")
 
+class StandardBatchResponse(BaseModel):
+    status: str = Field("SUCCESS", description="Batch execution status")
+    total_rows: int = Field(0, description="Total rows in CSV dataset")
+    processed_count: int = Field(0, description="Successfully processed row count")
+    successful_count: int = Field(0, description="Successful row count")
+    failed_count: int = Field(0, description="Failed row count")
+    detected_headers: List[str] = Field(default_factory=list, description="Headers detected in CSV")
+    filename: Optional[str] = Field(None, description="Uploaded CSV filename")
+    items: List[StandardProductInput] = Field(default_factory=list, description="List of standard product input records")
+
 class StandardErrorResponse(BaseModel):
     status: str = Field("ERROR", description="Status code string")
     error: str = Field(..., description="Human-readable error explanation")
+

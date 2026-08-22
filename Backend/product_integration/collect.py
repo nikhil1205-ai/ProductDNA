@@ -21,7 +21,7 @@ from .services.metadata_service import (
 )
 from .services.identity_extractor import extract_identity
 from .services.builder import build_standard_product_input
-from .schemas.response_schema import StandardProductInput
+from .schemas.response_schema import StandardProductInput, StandardBatchResponse
 
 import sys
 if str(Path(__file__).resolve().parent.parent) not in sys.path:
@@ -43,17 +43,16 @@ def integration_module_function(
     url_str: Optional[str] = None,
     json_data: Optional[Any] = None,
     input_text: Optional[str] = None,
-    explicit_type: Optional[str] = None
-) -> StandardProductInput:
+    explicit_type: Optional[str] = None,
+    return_batch: bool = False
+) -> Union[StandardProductInput, StandardBatchResponse]:
     """
     Main Module 1 Orchestration function: Product Intake & Document Processing.
-    Converts raw product input into a standardized Product Input Object,
-    saves it to Backend/input_data/Standard_input/, and returns the object.
+    Converts raw product input into standardized Product Input Objects.
+    For CSV datasets, processes row-by-row, saving one JSON per product row.
+    Saves results to Backend/input_data/Standard_input/ and returns result object.
     """
-    # 1. Generate unique request ID
-    request_id = generate_request_id()
-
-    # 2. Detect input type
+    # 1. Detect input type
     input_type = detect_input_type(
         file_name=filename,
         file_bytes=file_bytes,
@@ -63,34 +62,116 @@ def integration_module_function(
         explicit_type=explicit_type
     )
 
+    # Make sure output directory exists
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    # 2. CSV processing (row-by-row)
+    if input_type == "CSV":
+        if not filename or not file_bytes:
+            raise ValueError("CSV input requires file data and filename.")
+        validate_file_input(filename, file_bytes)
+        csv_res = read_csv(file_bytes)
+        
+        row_records = csv_res.get("row_records", [])
+        columns = csv_res.get("columns", [])
+        total_rows = csv_res.get("row_count", 0)
+
+        if not row_records:
+            raise ValueError("CSV file contains no data rows.")
+
+        items: List[StandardProductInput] = []
+
+        for rr in row_records:
+            req_id = generate_request_id()
+            row_num = rr["row_number"]
+            raw_row = rr["raw"]
+            norm_row = rr["normalized"]
+
+            # Content payload for this specific row
+            content_data = {
+                "text": f"CSV Row {row_num}: {', '.join([f'{k}: {v}' for k, v in norm_row.items() if v is not None])}",
+                "title": f"Row {row_num} from {filename}",
+                "tables": [{
+                    "columns": columns,
+                    "rows": [raw_row]
+                }],
+                "structured_data": norm_row,
+                "row_count": total_rows,
+                "column_count": len(columns)
+            }
+
+            # File metadata
+            metadata_data = extract_file_metadata(filename, file_bytes, mime_type="text/csv")
+            metadata_data["source_row"] = row_num
+
+            # Conservative Identity Extraction for current row
+            identity_data = extract_identity(
+                input_type="CSV",
+                content={
+                    "normalized_row": norm_row,
+                    "raw_row": raw_row,
+                    "text": content_data["text"]
+                }
+            )
+
+            # Source record (raw + normalized)
+            source_record_data = {
+                "row_number": row_num,
+                "raw": raw_row,
+                "normalized": norm_row
+            }
+
+            # Build StandardProductInput
+            standard_obj = build_standard_product_input(
+                request_id=req_id,
+                input_type="CSV",
+                identity_data=identity_data,
+                metadata_data=metadata_data,
+                content_data=content_data,
+                source_record_data=source_record_data,
+                status="READY_FOR_RESOLUTION"
+            )
+
+            # Invoke Module 2 Resolution safely
+            try:
+                resolved_dict = run_resolution(standard_obj.model_dump())
+                standard_obj.resolution_data = resolved_dict.get("resolution_data")
+                standard_obj.status = resolved_dict.get("status", standard_obj.status)
+            except Exception as e:
+                print(f"Warning: Module 2 resolution failed for {req_id} (Row {row_num}): {str(e)}")
+
+            # Save individual JSON per product row
+            file_path = OUTPUT_DIR / f"{req_id}.json"
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(standard_obj.model_dump_json(indent=2))
+
+            items.append(standard_obj)
+
+        if return_batch or len(items) > 1:
+            return StandardBatchResponse(
+                status="SUCCESS",
+                total_rows=total_rows,
+                processed_count=len(items),
+                successful_count=len(items),
+                failed_count=0,
+                detected_headers=columns,
+                filename=filename,
+                items=items
+            )
+        else:
+            return items[0]
+
+    # 3. Single product input types (PDF, URL, JSON, PRODUCT_NAME)
+    request_id = generate_request_id()
     content_data: Dict[str, Any] = {}
     metadata_data: Dict[str, Any] = {}
 
-    # 3. Validation, Reader Selection & Content/Metadata Extraction
     if input_type == "PDF":
         if not filename or not file_bytes:
             raise ValueError("PDF input requires file data and filename.")
         validate_file_input(filename, file_bytes)
         content_data = read_pdf(file_bytes)
         metadata_data = extract_file_metadata(filename, file_bytes, mime_type="application/pdf")
-
-    elif input_type == "CSV":
-        if not filename or not file_bytes:
-            raise ValueError("CSV input requires file data and filename.")
-        validate_file_input(filename, file_bytes)
-        csv_res = read_csv(file_bytes)
-        content_data = {
-            "text": csv_res.get("summary_text"),
-            "tables": [{
-                "columns": csv_res.get("columns", []),
-                "rows": csv_res.get("rows", []),
-                "row_count": csv_res.get("row_count", 0),
-                "column_count": csv_res.get("column_count", 0)
-            }],
-            "row_count": csv_res.get("row_count"),
-            "column_count": csv_res.get("column_count")
-        }
-        metadata_data = extract_file_metadata(filename, file_bytes, mime_type="text/csv")
 
     elif input_type == "URL":
         target_url = url_str or input_text
@@ -131,14 +212,14 @@ def integration_module_function(
     else:
         raise ValueError(f"Unsupported input type '{input_type}'.")
 
-    # 4. Identity Extraction
+    # Identity Extraction
     identity_data = extract_identity(
         input_type=input_type,
         content=content_data,
         raw_input_text=input_text
     )
 
-    # 5. Build Standard Product Input Object
+    # Build Standard Product Input Object
     standard_object = build_standard_product_input(
         request_id=request_id,
         input_type=input_type,
@@ -148,20 +229,42 @@ def integration_module_function(
         status="READY_FOR_RESOLUTION"
     )
 
-    # 6. Run Module 2 Resolution
+    # Run Module 2 Resolution
     try:
         resolved_dict = run_resolution(standard_object.model_dump())
-        # Update the standard object with the resolved data and status
         standard_object.resolution_data = resolved_dict.get("resolution_data")
         standard_object.status = resolved_dict.get("status", standard_object.status)
     except Exception as e:
         print(f"Warning: Module 2 resolution failed for {request_id}: {str(e)}")
 
-    # 7. Save JSON output to Backend/input_data/Standard_input/
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    # Save JSON output to Backend/input_data/Standard_input/
     file_path = OUTPUT_DIR / f"{request_id}.json"
-
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(standard_object.model_dump_json(indent=2))
 
     return standard_object
+
+
+if __name__ == "__main__":
+    sample_csv_path = Path(__file__).resolve().parent.parent / "input_data" / "Sample_input" / "Unihack_ Sample Dataset - Input.csv"
+    if sample_csv_path.exists():
+        print(f"Processing sample CSV dataset: {sample_csv_path.name}")
+        with open(sample_csv_path, "rb") as f:
+            csv_bytes = f.read()
+        res = integration_module_function(
+            file_bytes=csv_bytes,
+            filename=sample_csv_path.name,
+            return_batch=True
+        )
+        if isinstance(res, StandardBatchResponse):
+            print(f"=== Module 1 Intake Completed ===")
+            print(f"Total Rows: {res.total_rows}")
+            print(f"Processed: {res.processed_count}")
+            print(f"Successful: {res.successful_count}")
+            print(f"Failed: {res.failed_count}")
+            print(f"Detected Headers ({len(res.detected_headers)}): {res.detected_headers}")
+            print(f"Standardized Product JSON files saved to: {OUTPUT_DIR}")
+    else:
+        print(f"Sample CSV dataset file not found at: {sample_csv_path}")
+
+
