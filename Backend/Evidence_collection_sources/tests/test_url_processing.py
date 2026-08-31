@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 import requests
 
 from Evidence_collection_sources.collectors.url_collector import URLCollector
-from Evidence_collection_sources.processors.url_processor import URLProcessor
+from Evidence_extraction.processors.url_processor import URLProcessor
 from Evidence_collection_sources.models.source_models import SourceInput, SourceType, SourceStatus
 
 def test_invalid_url_format():

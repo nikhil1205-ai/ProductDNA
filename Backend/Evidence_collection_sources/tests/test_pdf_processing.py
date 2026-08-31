@@ -5,7 +5,7 @@ Unit Tests for PDF Source Collection & Processing
 import pytest
 import fitz  # PyMuPDF
 from Evidence_collection_sources.collectors.pdf_collector import PDFCollector
-from Evidence_collection_sources.processors.pdf_processor import PDFProcessor
+from Evidence_extraction.processors.pdf_processor import PDFProcessor
 from Evidence_collection_sources.models.source_models import SourceInput, SourceType, SourceStatus
 
 def create_sample_pdf_bytes() -> bytes:

@@ -1,3 +1,7 @@
+"""
+Module 3 Table Extractor
+"""
+
 from typing import List
 from .base import BaseExtractor
 from ..models.document_models import Document
@@ -15,7 +19,6 @@ class TableExtractor(BaseExtractor):
         seen: set = set()
         
         for tbl in document.tables:
-            # 1. Process table rows directly if available
             if tbl.rows:
                 for row in tbl.rows:
                     if not row or not any(cell.strip() for cell in row):
@@ -26,14 +29,12 @@ class TableExtractor(BaseExtractor):
                         continue
 
                     item_str = ""
-                    # 3-column row: [Attribute, Value, Unit]
                     if len(row) >= 3:
                         val = row[1].strip()
                         unit = row[2].strip()
                         if val:
                             val_unit = f"{val} {unit}".strip() if unit else val
                             item_str = f"{col0}: {val_unit}"
-                    # 2-column row: [Key, Value]
                     elif len(row) == 2:
                         val = row[1].strip()
                         if val:
@@ -43,7 +44,6 @@ class TableExtractor(BaseExtractor):
                         seen.add(item_str.lower())
                         extracted.append(item_str)
                         
-            # 2. Process pre-parsed kv_pairs if rows were empty
             elif tbl.kv_pairs:
                 for raw_key, raw_val in tbl.kv_pairs.items():
                     key_clean = raw_key.strip()
@@ -55,4 +55,3 @@ class TableExtractor(BaseExtractor):
                             extracted.append(item_str)
 
         return extracted
-

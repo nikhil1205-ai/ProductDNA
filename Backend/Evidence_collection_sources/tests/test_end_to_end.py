@@ -4,8 +4,8 @@ End-to-End Integration Tests for Module 4 Evidence Collection & Structured Extra
 
 import pytest
 import fitz  # PyMuPDF
-from Evidence_collection_sources.services.evidence_extraction_service import EvidenceExtractionService
-from Evidence_collection_sources.models.response_models import StructuredEvidence
+from Evidence_extraction.services.evidence_extraction_service import EvidenceExtractionService
+from Evidence_extraction.models.response_models import StructuredEvidence
 
 def create_abb_pdf_bytes() -> bytes:
     doc = fitz.open()

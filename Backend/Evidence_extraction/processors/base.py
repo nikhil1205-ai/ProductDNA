@@ -1,9 +1,9 @@
 """
-Module 4 Processor Abstract Base Class
+Module 3 Processor Abstract Base Class
 """
 
 from abc import ABC, abstractmethod
-from ..models.source_models import Source, SourceInput
+from Evidence_collection_sources.models.source_models import Source, SourceInput
 from ..models.document_models import Document
 
 class BaseProcessor(ABC):

@@ -1,5 +1,5 @@
 """
-Module 4 Content Cleaning & Text Normalization Utilities
+Module 3 Content Cleaning & Text Normalization Utilities
 """
 
 import re
@@ -11,11 +11,8 @@ def clean_whitespace(text: str) -> str:
     """Normalize irregular whitespaces and line endings."""
     if not text:
         return ""
-    # Replace carriage returns
     text = text.replace("\r\n", "\n").replace("\r", "\n")
-    # Collapse multiple blank lines
     text = re.sub(r"\n{3,}", "\n\n", text)
-    # Trim leading/trailing spaces per line
     lines = [line.strip() for line in text.split("\n")]
     return "\n".join(lines).strip()
 
@@ -41,8 +38,6 @@ def normalize_unit_string(val_unit_str: str) -> str:
     """Basic unit/value representation cleanup (e.g., 380 - 480 V -> 380-480 V)."""
     if not val_unit_str:
         return ""
-    # 380 - 480 V -> 380-480 V
     cleaned = re.sub(r"(\d+)\s*-\s*(\d+)", r"\1-\2", val_unit_str)
-    # Fix spaces before common units
     cleaned = re.sub(r"(\d+)\s+(V|kV|W|kW|MW|A|mA|Hz|RPM|kg|g|m|cm|mm|bar|Pa|HP|nm|Nm)\b", r"\1 \2", cleaned, flags=re.IGNORECASE)
     return cleaned.strip()

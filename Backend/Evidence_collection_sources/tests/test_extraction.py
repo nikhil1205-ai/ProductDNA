@@ -3,10 +3,10 @@ Unit Tests for Attribute Extraction (Regex, Table, LLM/Hybrid)
 """
 
 import pytest
-from Evidence_collection_sources.models.document_models import Document, TextBlock, Table, LocationInfo
-from Evidence_collection_sources.extractors.pattern_extractor import PatternExtractor
-from Evidence_collection_sources.extractors.table_extractor import TableExtractor
-from Evidence_collection_sources.extractors.llm_extractor import LLMExtractor
+from Evidence_extraction.models.document_models import Document, TextBlock, Table, LocationInfo
+from Evidence_extraction.extractors.pattern_extractor import PatternExtractor
+from Evidence_extraction.extractors.table_extractor import TableExtractor
+from Evidence_extraction.extractors.llm_extractor import LLMExtractor
 
 def test_pattern_extractor():
     doc = Document(

@@ -3,7 +3,7 @@ Unit Tests for Canonical Attribute Mapping
 """
 
 import pytest
-from Evidence_collection_sources.mapping.attribute_mapper import AttributeMapper
+from Evidence_extraction.mapping.attribute_mapper import AttributeMapper
 
 def test_voltage_synonyms():
     assert AttributeMapper.map_attribute("Input Voltage") == "voltage"

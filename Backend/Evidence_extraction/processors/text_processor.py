@@ -1,3 +1,7 @@
+"""
+Module 3 Plain Text, Technical Text, and CSV Content Processor
+"""
+
 import csv
 import io
 import re
@@ -5,7 +9,7 @@ from typing import List
 
 from .base import BaseProcessor
 from .content_cleaner import clean_whitespace, remove_duplicate_text_blocks
-from ..models.source_models import Source, SourceInput, SourceStatus
+from Evidence_collection_sources.models.source_models import Source, SourceInput, SourceStatus
 from ..models.document_models import Document, Section, TextBlock, Table, LocationInfo
 
 class TextProcessor(BaseProcessor):
@@ -33,7 +37,6 @@ class TextProcessor(BaseProcessor):
                 metadata={"source_type": source.source_type}
             )
 
-        # Check if file is a CSV or tabular file
         is_csv = source.source_name.lower().endswith(".csv") or source_input.subtype == "csv"
         if not is_csv and "\n" in text_content:
             first_line = text_content.strip().split("\n")[0]
@@ -99,7 +102,6 @@ class TextProcessor(BaseProcessor):
                     current_paragraph_lines = []
                 continue
 
-            # Detect markdown headers or section labels
             header_match = re.match(r"^(#{1,4}\s+|[A-Z\s]{4,30}:|===|---)", line_str)
             if header_match or (len(line_str) < 50 and line_str.endswith(":") and not ":" in line_str[:-1]):
                 if current_paragraph_lines:
@@ -145,4 +147,3 @@ class TextProcessor(BaseProcessor):
             raw_text=text_content,
             metadata={"source_type": source.source_type}
         )
-

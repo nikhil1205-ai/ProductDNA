@@ -1,10 +1,9 @@
 """
-Module 4 Canonical Attribute Registry & Synonym Mapping Definitions
+Module 3 Canonical Attribute Registry & Synonym Mapping Definitions
 """
 
 from typing import Dict, List, Set
 
-# Canonical attribute names mapping dictionary
 SYNONYM_MAP: Dict[str, str] = {
     # Voltage
     "voltage": "voltage",
@@ -109,7 +108,6 @@ SYNONYM_MAP: Dict[str, str] = {
     "serial number": "serial_number"
 }
 
-# Generic Category Schema Registry
 CATEGORY_SCHEMAS: Dict[str, List[str]] = {
     "Industrial Drives": [
         "voltage", "frequency", "power", "current", "efficiency",

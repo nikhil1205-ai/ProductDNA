@@ -1,5 +1,5 @@
 """
-Module 4 LLM Evidence Extractor Implementation
+Module 3 LLM Evidence Extractor Implementation
 """
 
 import json
@@ -9,7 +9,7 @@ from langchain_core.prompts import PromptTemplate
 
 from .base import BaseExtractor, LLMExtractionProvider
 from ..models.document_models import Document
-from ..config.llm_config import llm_config
+from Evidence_collection_sources.config.llm_config import llm_config
 
 class LLMExtractionProviderImpl(LLMExtractionProvider):
     """
@@ -113,4 +113,3 @@ class LLMExtractor(BaseExtractor):
             document_text=document.raw_text,
             source_id=document.source_id
         )
-

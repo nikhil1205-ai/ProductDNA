@@ -38,6 +38,7 @@ class SourceMetadata(BaseModel):
 class SourceInput(BaseModel):
     model_config = ConfigDict(extra="ignore")
     
+    request_id: Optional[str] = Field(default=None, description="Associated product request ID e.g. REQ-001")
     type: SourceType = Field(description="Source type: url, pdf, or text")
     value: str = Field(description="URL string, file path, filename, or raw text content")
     name: Optional[str] = Field(default=None, description="Human readable name for source")
@@ -49,6 +50,7 @@ class Source(BaseModel):
     model_config = ConfigDict(extra="ignore")
     
     source_id: str = Field(description="Unique identifier e.g. SRC-001")
+    request_id: Optional[str] = Field(default=None, description="Associated product request ID")
     source_type: SourceType
     source_subtype: str = Field(default="technical_document")
     source_name: str
@@ -56,3 +58,4 @@ class Source(BaseModel):
     status: SourceStatus = Field(default=SourceStatus.RECEIVED)
     metadata: SourceMetadata = Field(default_factory=SourceMetadata)
     error_message: Optional[str] = None
+    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

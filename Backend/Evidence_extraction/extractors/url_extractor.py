@@ -1,7 +1,11 @@
+"""
+Module 3 URL Evidence Extractor
+"""
+
 from typing import List
 from .base import BaseExtractor
 from ..models.document_models import Document
-from ..models.source_models import SourceType
+from Evidence_collection_sources.models.source_models import SourceType
 
 class URLExtractor(BaseExtractor):
     """
@@ -17,7 +21,6 @@ class URLExtractor(BaseExtractor):
     }
 
     def extract(self, document: Document) -> List[str]:
-        # URLExtractor MUST ONLY process actual URL sources
         src_type = document.metadata.get("source_type")
         if src_type not in (SourceType.URL, "url"):
             return []
@@ -40,7 +43,6 @@ class URLExtractor(BaseExtractor):
                     continue
 
                 line_lower = line_clean.lower()
-                # Skip boilerplate navigation / footer lines
                 if any(bp in line_lower for bp in self.BOILERPLATE_KEYWORDS):
                     continue
 
@@ -49,4 +51,3 @@ class URLExtractor(BaseExtractor):
                     extracted.append(line_clean)
 
         return extracted
-

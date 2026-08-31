@@ -4,7 +4,7 @@ Unit Tests for Plain Text Document Collection & Processing
 
 import pytest
 from Evidence_collection_sources.collectors.text_collector import TextCollector
-from Evidence_collection_sources.processors.text_processor import TextProcessor
+from Evidence_extraction.processors.text_processor import TextProcessor
 from Evidence_collection_sources.models.source_models import SourceInput, SourceType, SourceStatus
 
 def test_plain_text_processing():

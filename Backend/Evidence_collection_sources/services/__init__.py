@@ -1,7 +1,7 @@
 """
-Module 4 Services Package
+Module 2 Services Package
 """
 
-from .evidence_extraction_service import EvidenceExtractionService
+from .resource_manager import ResourceManager
 
-__all__ = ["EvidenceExtractionService"]
+__all__ = ["ResourceManager"]

@@ -1,5 +1,5 @@
 """
-Module 4 URL / Website Content Processor
+Module 3 URL / Website Content Processor
 """
 
 import re
@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 
 from .base import BaseProcessor
 from .content_cleaner import clean_whitespace, remove_duplicate_text_blocks
-from ..models.source_models import Source, SourceInput
+from Evidence_collection_sources.models.source_models import Source, SourceInput
 from ..models.document_models import Document, Section, TextBlock, Table, LocationInfo
 
 class URLProcessor(BaseProcessor):
@@ -33,13 +33,11 @@ class URLProcessor(BaseProcessor):
 
         soup = BeautifulSoup(html_str, "html.parser")
         
-        # Extract title
         title_tag = soup.find("title")
         doc_title = title_tag.get_text(strip=True) if title_tag else source.source_name
         if doc_title and source.metadata:
             source.metadata.title = doc_title
 
-        # Remove irrelevant noise elements
         for element in soup(["script", "style", "nav", "footer", "header", "aside", "noscript", "svg"]):
             element.decompose()
 
@@ -51,21 +49,17 @@ class URLProcessor(BaseProcessor):
         block_idx = 1
         table_idx = 1
 
-        # Process main body elements
         body = soup.find("body") or soup
         
-        # Extract tables
         for html_table in body.find_all("table"):
             headers = []
             rows = []
             kv_pairs = {}
             
-            # Extract headers
             th_tags = html_table.find_all("th")
             if th_tags:
                 headers = [th.get_text(strip=True) for th in th_tags]
 
-            # Extract rows
             tr_tags = html_table.find_all("tr")
             for tr in tr_tags:
                 tds = tr.find_all("td")
@@ -89,10 +83,8 @@ class URLProcessor(BaseProcessor):
                 tables.append(table_obj)
                 table_idx += 1
             
-            # Decompose table so its text isn't duplicated in paragraph parsing
             html_table.decompose()
 
-        # Extract text blocks per paragraph / heading
         for elem in body.find_all(["h1", "h2", "h3", "h4", "p", "li", "div"]):
             text = elem.get_text(strip=True)
             if not text or len(text) < 3:
@@ -103,7 +95,6 @@ class URLProcessor(BaseProcessor):
                 current_section = text
                 continue
                 
-            # Avoid container divs with huge text if already processed
             if tag_name == "div" and elem.find(["p", "h1", "h2", "h3", "div"]):
                 continue
 
@@ -120,10 +111,7 @@ class URLProcessor(BaseProcessor):
                 )
                 block_idx += 1
 
-        # Deduplicate blocks
         unique_blocks = remove_duplicate_text_blocks(text_blocks)
-        
-        # Build full text string
         raw_text = "\n\n".join([b.text for b in unique_blocks])
 
         return Document(

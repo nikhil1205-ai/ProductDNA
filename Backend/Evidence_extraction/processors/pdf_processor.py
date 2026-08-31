@@ -1,5 +1,5 @@
 """
-Module 4 PDF Document Content Processor
+Module 3 PDF Document Content Processor
 """
 
 import fitz  # PyMuPDF
@@ -9,7 +9,7 @@ from typing import List, Dict
 
 from .base import BaseProcessor
 from .content_cleaner import clean_whitespace, remove_duplicate_text_blocks
-from ..models.source_models import Source, SourceInput, SourceStatus
+from Evidence_collection_sources.models.source_models import Source, SourceInput, SourceStatus
 from ..models.document_models import Document, Section, TextBlock, Table, LocationInfo
 
 class PDFProcessor(BaseProcessor):
@@ -43,14 +43,12 @@ class PDFProcessor(BaseProcessor):
                 if page_text.strip():
                     full_text_parts.append(f"--- Page {page_num} ---\n{page_text}")
                     
-                    # Split page into blocks / lines
                     paragraphs = page_text.split("\n\n")
                     for para in paragraphs:
                         cleaned = clean_whitespace(para)
                         if not cleaned or len(cleaned) < 3:
                             continue
                             
-                        # Detect section headings (short lines in title case or uppercase)
                         first_line = cleaned.split("\n")[0].strip()
                         if len(first_line) < 60 and (first_line.isupper() or first_line.istitle() or ":" in first_line):
                             current_section = first_line
@@ -83,12 +81,10 @@ class PDFProcessor(BaseProcessor):
                         rows = []
                         kv_pairs: Dict[str, str] = {}
                         
-                        # Process table rows
                         cleaned_tbl = [[str(cell or "").strip() for cell in row] for row in raw_tbl if any(row)]
                         if not cleaned_tbl:
                             continue
                             
-                        # Determine if first row is header
                         if len(cleaned_tbl) > 1:
                             headers = cleaned_tbl[0]
                             rows = cleaned_tbl[1:]
@@ -112,10 +108,8 @@ class PDFProcessor(BaseProcessor):
                         )
                         table_idx += 1
         except Exception as e:
-            # Table extraction failure is not fatal if text was extracted
             pass
 
-        # Check if text was extracted
         full_text = "\n\n".join(full_text_parts)
         if not full_text.strip():
             source.status = SourceStatus.FAILED
