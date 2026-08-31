@@ -234,9 +234,7 @@ export default function App() {
         formData.append('value', resText.trim());
       }
 
-      const res = await axios.post(RESOURCES_API_URL, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const res = await axios.post(RESOURCES_API_URL, formData);
 
       if (res.data) {
         // Reset form
@@ -483,16 +481,25 @@ export default function App() {
 
                 {/* PDF Intake */}
                 {resTab === 'PDF' && (
-                  <div className="border-2 border-dashed border-slate-700 hover:border-indigo-500/50 rounded-xl p-5 text-center bg-slate-950/50 relative cursor-pointer">
+                  <div className={`border-2 border-dashed ${resFile ? 'border-emerald-500/50 bg-emerald-950/20' : 'border-slate-700 hover:border-indigo-500/50 bg-slate-950/50'} rounded-xl p-5 text-center relative cursor-pointer transition-all`}>
                     <input
                       type="file"
                       accept=".pdf"
                       onChange={(e) => setResFile(e.target.files?.[0] || null)}
                       className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                     />
-                    <UploadCloud className="w-8 h-8 text-indigo-400 mx-auto mb-2" />
-                    <p className="text-xs font-medium text-slate-200">{resFile?.name || 'Select or Drag PDF document'}</p>
-                    <p className="text-[10px] text-slate-500 mt-1">Computes SHA-256 & stores locally under storage/resources/</p>
+                    <UploadCloud className={`w-8 h-8 ${resFile ? 'text-emerald-400' : 'text-indigo-400'} mx-auto mb-2`} />
+                    {resFile ? (
+                      <div>
+                        <p className="text-xs font-semibold text-emerald-300">{resFile.name}</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">{(resFile.size / 1024).toFixed(1)} KB • Ready to upload</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-xs font-medium text-slate-200">Select or Drag PDF document</p>
+                        <p className="text-[10px] text-slate-500 mt-1">Computes SHA-256 & stores locally under storage/resources/</p>
+                      </div>
+                    )}
                   </div>
                 )}
 

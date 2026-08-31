@@ -46,8 +46,12 @@ class URLCollector(BaseSourceCollector):
             content_hash = hashlib.sha256(content_bytes).hexdigest()
             content_type = response.headers.get("content-type", "text/html")
             
+            import re
+            clean_name = re.sub(r'[^a-zA-Z0-9_-]', '_', parsed.netloc or source_input.name or 'webpage').strip('_')
+            filename = f"{clean_name}.html"
             metadata = SourceMetadata(
                 url=final_url,
+                filename=filename,
                 content_type=content_type,
                 size_bytes=len(content_bytes),
                 content_hash=content_hash

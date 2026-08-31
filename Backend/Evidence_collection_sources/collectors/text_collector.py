@@ -58,7 +58,8 @@ class TextCollector(BaseSourceCollector):
         content_bytes = text_content.encode("utf-8")
         content_hash = hashlib.sha256(content_bytes).hexdigest()
         
-        # Save decoded text on source_input for processor
+        # Save raw bytes and decoded text on source_input for store and processor
+        source_input.file_bytes = content_bytes
         source_input.metadata["text_content"] = text_content
 
         metadata = SourceMetadata(

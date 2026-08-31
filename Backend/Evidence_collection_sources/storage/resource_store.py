@@ -64,7 +64,10 @@ class ResourceStore:
         source_dir.mkdir(parents=True, exist_ok=True)
 
         if file_bytes:
-            filename = source.metadata.filename or f"original.{source.source_type.value}"
+            raw_filename = source.metadata.filename or f"original.{source.source_type.value}"
+            # Sanitize filename for OS filesystem compatibility
+            import re
+            filename = re.sub(r'[\\/*?:"<>|]', '_', raw_filename)
             file_path = source_dir / filename
             try:
                 file_path.write_bytes(file_bytes)
@@ -73,9 +76,9 @@ class ResourceStore:
 
         # Update manifest record
         if hasattr(source, "model_dump"):
-            source_dict = source.model_dump()
+            source_dict = source.model_dump(exclude_none=True)
         else:
-            source_dict = source.dict()
+            source_dict = source.dict(exclude_none=True)
 
         manifest[source.source_id] = source_dict
         self._write_manifest(manifest)
