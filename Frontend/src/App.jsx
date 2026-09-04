@@ -122,6 +122,7 @@ export default function App() {
   const [m1File, setM1File] = useState(null);
   const [m1Loading, setM1Loading] = useState(false);
   const [m1Response, setM1Response] = useState(null);
+  const [m1RawResponse, setM1RawResponse] = useState(null);
   const [m1DetectedHeaders, setM1DetectedHeaders] = useState([]);
   const [m1Error, setM1Error] = useState(null);
   const [m1Copied, setM1Copied] = useState(false);
@@ -159,6 +160,7 @@ export default function App() {
     const file = e.target.files?.[0];
     setM1File(file || null);
     setM1Response(null);
+    setM1RawResponse(null);
     setM1Error(null);
     if (file) {
       const reader = new FileReader();
@@ -195,16 +197,49 @@ export default function App() {
         const res = await axios.post(MODULE1_API_URL, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
+        
         if (res && res.data && res.data.status !== 'ERROR') {
-          setM1Response(STATIC_PRODUCT_OUTPUT);
+          setM1RawResponse(res.data);
+          
+          let displayObj = {};
+          if (res.data.status === 'SUCCESS' && res.data.items && res.data.items.length > 0) {
+            const firstItem = res.data.items[0];
+            displayObj = firstItem.source_record?.raw || {};
+            displayObj = {
+              PART_NUMBER: displayObj.PART_NUMBER || firstItem.identity?.part_number || '',
+              BRAND_NAME: displayObj.BRAND_NAME || firstItem.identity?.brand || '',
+              MANUFACTURER_NAME: displayObj.MANUFACTURER_NAME || firstItem.identity?.manufacturer || '',
+              "SKU - MY_PART_NUMBER": displayObj["SKU - MY_PART_NUMBER"] || firstItem.identity?.sku || '',
+              SHORT_DESC: displayObj.SHORT_DESC || displayObj.Part_Desc || firstItem.identity?.product_name || '',
+              Dept: displayObj.Dept || '',
+              Class: displayObj.Class || '',
+              Fine: displayObj.Fine || '',
+              ...displayObj
+            };
+          } else {
+             const item = res.data;
+             displayObj = {
+              PART_NUMBER: item.identity?.part_number || '',
+              BRAND_NAME: item.identity?.brand || '',
+              MANUFACTURER_NAME: item.identity?.manufacturer || '',
+              "SKU - MY_PART_NUMBER": item.identity?.sku || '',
+              SHORT_DESC: item.identity?.product_name || item.unstructured_data?.title || 'Unknown Product',
+              Dept: '',
+              Class: '',
+              Fine: ''
+            };
+          }
+          setM1Response(displayObj);
         } else {
-          setM1Response(STATIC_PRODUCT_OUTPUT);
+          throw new Error(res?.data?.error || 'Unknown server error');
         }
       } catch (backendErr) {
-        setM1Response(STATIC_PRODUCT_OUTPUT);
+        throw new Error(backendErr.response?.data?.error || backendErr.message || 'Error processing product input.');
       }
     } catch (err) {
       setM1Error(err.message || 'Error processing product input.');
+      setM1Response(null);
+      setM1RawResponse(null);
     } finally {
       setM1Loading(false);
     }
@@ -363,6 +398,7 @@ export default function App() {
                           setM1File(null);
                           setM1DetectedHeaders([]);
                           setM1Response(null);
+                          setM1RawResponse(null);
                         }}
                         className={`flex items-center justify-center space-x-2 py-2.5 px-3 rounded-lg text-xs font-semibold transition-all ${
                           m1Tab === tab.id
@@ -407,7 +443,7 @@ export default function App() {
 
                 {m1Tab === 'PDF' && (
                   <div className="border-2 border-dashed border-slate-700 hover:border-indigo-500/50 rounded-xl p-6 text-center bg-slate-950/50 relative cursor-pointer">
-                    <input type="file" accept=".pdf" onChange={(e) => { setM1File(e.target.files?.[0]); setM1Response(null); }} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                    <input type="file" accept=".pdf" onChange={(e) => { setM1File(e.target.files?.[0]); setM1Response(null); setM1RawResponse(null); }} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
                     <UploadCloud className="w-10 h-10 text-indigo-400 mx-auto mb-2" />
                     <p className="text-sm font-medium text-slate-200">{m1File?.name || 'Click or Drag PDF file here'}</p>
                   </div>
@@ -794,7 +830,7 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => {
-                          navigator.clipboard.writeText(JSON.stringify(m1Response, null, 2));
+                          navigator.clipboard.writeText(JSON.stringify(m1RawResponse, null, 2));
                           setM1Copied(true);
                           setTimeout(() => setM1Copied(false), 2000);
                         }}
@@ -807,7 +843,7 @@ export default function App() {
 
                     <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 max-h-[450px] overflow-auto">
                       <pre className="text-xs font-mono text-indigo-200 leading-relaxed whitespace-pre-wrap">
-                        {JSON.stringify(m1Response, null, 2)}
+                        {JSON.stringify(m1RawResponse, null, 2)}
                       </pre>
                     </div>
                   </div>

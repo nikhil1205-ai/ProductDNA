@@ -1,19 +1,19 @@
 {
-  "request_id": "REQ-20260903-28DAF9C4",
+  "request_id": "REQ-20260904-E9A4B06C",
   "input_type": "CSV",
   "identity": {
-    "product_name": "9A-570-240 Abranet 2.75x30",
+    "product_name": "9A-570-320 Abranet 2.75x30",
     "brand": null,
     "manufacturer": "Mirka Abrasives Inc (MIRUS)",
     "model": null,
     "sku": null,
-    "part_number": "9A-570-240"
+    "part_number": "9A-570-320"
   },
   "source_record": {
-    "row_number": 10,
+    "row_number": 11,
     "raw": {
-      "Mfg_Part_Num": "9A-570-240",
-      "Part_Desc": "9A-570-240 Abranet 2.75x30",
+      "Mfg_Part_Num": "9A-570-320",
+      "Part_Desc": "9A-570-320 Abranet 2.75x30",
       "E1_Brand": "-- Unbranded --",
       "Unilog_Brand": "-- No Unilog Brand --",
       "DIB_Brand": "-- No DIB Brand --",
@@ -25,11 +25,11 @@
     "extension": ".csv",
     "mime_type": "text/csv",
     "size_bytes": 1667,
-    "created_at": "2026-09-03T19:53:53.293045+00:00",
+    "created_at": "2026-09-04T10:01:34.885611+00:00",
     "checksum": "a63114df3a9dd73ea975faea2150e88aca2ecc50c519958309a66ddfa80f6478",
     "source_url": null,
     "retrieved_at": null,
-    "row_number": 10,
+    "row_number": 11,
     "total_rows": 11,
     "total_columns": 6
   },
