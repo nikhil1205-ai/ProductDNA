@@ -50,7 +50,7 @@ except ImportError:
     from product_integration.schemas.response_schema import StandardProductInput, StandardBatchResponse
 
 # Output directory path as per project spec
-OUTPUT_DIR = Path(__file__).resolve().parent.parent / "input_data" / "Standard_input"
+OUTPUT_DIR = Path(__file__).resolve().parent.parent / "input_data" / "Module_1_Standard_input"
 
 def generate_request_id() -> str:
     """Generate a unique request ID formatted as REQ-YYYYMMDD-HEX."""
@@ -71,7 +71,7 @@ def integration_module_function(
     Main Module 1 Orchestration function: Product Intake & Document Processing.
     Converts raw product input into standardized Product Input Objects.
     For CSV datasets, processes row-by-row, saving one JSON per product row.
-    Saves results to Backend/input_data/Standard_input/ and returns result object.
+    Saves results to Backend/input_data/Module_1_Standard_input/ and returns result object.
     """
     # 1. Detect input type
     input_type = detect_input_type(

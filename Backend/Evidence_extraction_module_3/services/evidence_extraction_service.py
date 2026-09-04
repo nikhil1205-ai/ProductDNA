@@ -1,27 +1,22 @@
 """
-Module 3 Main Service Orchestrator: Evidence Extraction Service
+Module 3 Service Orchestrator: Evidence Extraction Service
 """
 
 import time
 import uuid
-import concurrent.futures
+import re
 from typing import Dict, Any, List, Optional, Set
+from pathlib import Path
 
-from Evidence_collection_sources_module_2.models.source_models import SourceInput, Source, SourceType, SourceStatus, SourceOrigin
+from Evidence_collection_sources_module_2.models.source_models import SourceInput, Source, SourceType, SourceStatus
 from Evidence_collection_sources_module_2.collectors.url_collector import URLCollector
 from Evidence_collection_sources_module_2.collectors.pdf_collector import PDFCollector
 from Evidence_collection_sources_module_2.collectors.text_collector import TextCollector
 from Evidence_collection_sources_module_2.services.resource_manager import ResourceManager
 
 from ..models.document_models import Document
-from ..models.extraction_models import ExtractorEvidenceResult, EvidenceContainer
-from ..models.response_models import (
-    StructuredEvidence,
-    ProductIdentity,
-    ProcessingSummary,
-    ProcessingWarning,
-    Module3Response
-)
+from ..models.extraction_models import EvidenceItem, EvidenceType, ExtractionMethod
+from ..models.response_models import StructuredEvidence
 
 from ..processors.url_processor import URLProcessor
 from ..processors.pdf_processor import PDFProcessor
@@ -31,14 +26,16 @@ from ..extractors.pattern_extractor import PatternExtractor
 from ..extractors.table_extractor import TableExtractor
 from ..extractors.llm_extractor import LLMExtractor
 from ..extractors.url_extractor import URLExtractor
+from ..extractors.identifier_extractor import IdentifierExtractor
 
-ENABLE_HASH_DEDUPLICATION = True
+OUTPUT_DIR = Path(__file__).resolve().parent.parent.parent / "input_data" / "Module_3_Extracted_Evidence_data"
 
 class EvidenceExtractionService:
     """
     Main Service Orchestrator for Evidence Extraction (Module 3).
-    Receives resolved product information and user-provided sources,
-    processes content through ResourceManager, extracts evidence text, and returns Structured Evidence.
+    Intakes Module 2 collected resources, parses documents, extracts source-grounded evidence units,
+    saves structured output JSON to Backend/input_data/Module_3_Extracted_Evidence_data/,
+    and returns Structured Evidence matching the strict output schema.
     """
 
     def __init__(self):
@@ -51,29 +48,14 @@ class EvidenceExtractionService:
         self.pdf_processor = PDFProcessor()
         self.text_processor = TextProcessor()
 
+        self.identifier_extractor = IdentifierExtractor()
         self.pattern_extractor = PatternExtractor()
         self.table_extractor = TableExtractor()
-        self.llm_extractor = LLMExtractor()
         self.url_extractor = URLExtractor()
+        self.llm_extractor = LLMExtractor()
 
     def process(self, request_payload: Dict[str, Any]) -> StructuredEvidence:
-        start_time = time.time()
-        
-        req_id = request_payload.get("request_id") or f"REQ-{uuid.uuid4().hex[:8].upper()}"
-        
-        identity_dict = request_payload.get("identity") or request_payload.get("product_identity") or {}
-        if not identity_dict and "product" in request_payload and isinstance(request_payload["product"], dict):
-            identity_dict = request_payload["product"]
-
-        identity = ProductIdentity(
-            product_name=identity_dict.get("product_name"),
-            brand=identity_dict.get("brand"),
-            manufacturer=identity_dict.get("manufacturer"),
-            model=identity_dict.get("model"),
-            sku=identity_dict.get("sku"),
-            part_number=identity_dict.get("part_number"),
-            category=identity_dict.get("category")
-        )
+        product_id = request_payload.get("product_id") or request_payload.get("product", {}).get("product_id") or "PROD-001"
 
         user_source_inputs: List[SourceInput] = []
         raw_sources = request_payload.get("sources", [])
@@ -87,11 +69,8 @@ class EvidenceExtractionService:
 
         sources: List[Source] = []
         documents: List[Document] = []
-        warnings: List[ProcessingWarning] = []
-        seen_hashes: Set[str] = set()
 
         source_counter = 1
-        source_name_map: Dict[str, str] = {}
         
         for src_input in user_source_inputs:
             src_id = f"SRC-{source_counter:03d}"
@@ -105,16 +84,8 @@ class EvidenceExtractionService:
                 collected_source = self.text_collector.collect(src_input, src_id)
 
             sources.append(collected_source)
-            source_name_map[src_id] = collected_source.source_name
 
             if collected_source.status == SourceStatus.FAILED:
-                warnings.append(
-                    ProcessingWarning(
-                        source_id=src_id,
-                        warning_code="SOURCE_INTAKE_FAILED",
-                        message=collected_source.error_message or "Source intake failed."
-                    )
-                )
                 continue
 
             if collected_source.source_type == SourceType.URL:
@@ -125,91 +96,172 @@ class EvidenceExtractionService:
                 doc = self.text_processor.process(collected_source, src_input)
 
             if collected_source.status == SourceStatus.FAILED:
-                warnings.append(
-                    ProcessingWarning(
-                        source_id=src_id,
-                        warning_code="DOCUMENT_PROCESSING_FAILED",
-                        message=collected_source.error_message or "Document processing failed."
-                    )
-                )
                 continue
 
             documents.append(doc)
 
-        pattern_data: List[str] = []
-        pattern_sources: List[str] = []
+        all_extracted_items: List[EvidenceItem] = []
+        seen_texts: Set[str] = set()
 
-        table_data: List[str] = []
-        table_sources: List[str] = []
-
-        url_data: List[str] = []
-        url_sources: List[str] = []
-
-        llm_data: List[str] = []
-        llm_sources: List[str] = []
-
+        # Deterministic and fallback extraction per document
         for doc in documents:
-            src_name = source_name_map.get(doc.source_id, doc.title or doc.source_id)
-
-            p_items = self.pattern_extractor.extract(doc)
-            if p_items:
-                pattern_data.extend(p_items)
-                if src_name not in pattern_sources:
-                    pattern_sources.append(src_name)
-
-            t_items = self.table_extractor.extract(doc)
-            if t_items:
-                table_data.extend(t_items)
-                if src_name not in table_sources:
-                    table_sources.append(src_name)
-
-            u_items = self.url_extractor.extract(doc)
-            if u_items:
-                url_data.extend(u_items)
-                if src_name not in url_sources:
-                    url_sources.append(src_name)
-
-            l_items = self.llm_extractor.extract(doc)
-            if l_items:
-                llm_data.extend(l_items)
-                if src_name not in llm_sources:
-                    llm_sources.append(src_name)
-
-        evidence = EvidenceContainer(
-            pattern_extractor=ExtractorEvidenceResult(
-                extractor_data=pattern_data,
-                sources=pattern_sources
-            ),
-            table_extractor=ExtractorEvidenceResult(
-                extractor_data=table_data,
-                sources=table_sources
-            ),
-            url_extractor=ExtractorEvidenceResult(
-                extractor_data=url_data,
-                sources=url_sources
-            ),
-            llm_extractor=ExtractorEvidenceResult(
-                extractor_data=llm_data,
-                sources=llm_sources
+            doc_src_type = str(doc.metadata.get("source_type", "text")).lower()
+            doc_parser_method = (
+                ExtractionMethod.DOCUMENT_PARSER if doc_src_type == "pdf"
+                else ExtractionMethod.HTML_PARSER if doc_src_type == "url"
+                else ExtractionMethod.TEXT_PARSER
             )
-        )
 
-        total_extracted = len(pattern_data) + len(table_data) + len(url_data) + len(llm_data)
+            # 1. Deterministic Identifier Extraction
+            try:
+                id_items = self.identifier_extractor.extract(doc)
+                for item in id_items:
+                    dedup_key = item.text.strip().lower()
+                    if dedup_key not in seen_texts:
+                        seen_texts.add(dedup_key)
+                        all_extracted_items.append(item)
+            except Exception:
+                pass
 
-        elapsed_seconds = round(time.time() - start_time, 3)
+            # 2. Deterministic Pattern Extraction (Key-Value lines)
+            try:
+                p_items = self.pattern_extractor.extract(doc)
+                for item in p_items:
+                    dedup_key = item.text.strip().lower()
+                    if dedup_key not in seen_texts:
+                        seen_texts.add(dedup_key)
+                        all_extracted_items.append(item)
+            except Exception:
+                pass
+
+            # 3. Deterministic Table Extraction
+            try:
+                t_items = self.table_extractor.extract(doc)
+                for item in t_items:
+                    dedup_key = item.text.strip().lower()
+                    if dedup_key not in seen_texts:
+                        seen_texts.add(dedup_key)
+                        all_extracted_items.append(item)
+            except Exception:
+                pass
+
+            # 4. Deterministic URL Line Noise Filtering (if URL)
+            if doc_src_type == "url":
+                try:
+                    u_items = self.url_extractor.extract(doc)
+                    for item in u_items:
+                        dedup_key = item.text.strip().lower()
+                        if dedup_key not in seen_texts:
+                            seen_texts.add(dedup_key)
+                            all_extracted_items.append(item)
+                except Exception:
+                    pass
+
+            # 5. Prose Sentence Extraction via Document / HTML / Text Parser
+            prose_count_before = len(all_extracted_items)
+            for block in doc.text_blocks:
+                sentences = re.split(r'(?<=[.!?])\s+', block.text.strip())
+                for line_idx, sent in enumerate(sentences, start=1):
+                    clean_sent = sent.strip()
+                    if len(clean_sent) >= 12:
+                        dedup_key = clean_sent.lower()
+                        if dedup_key not in seen_texts:
+                            seen_texts.add(dedup_key)
+                            item = EvidenceItem(
+                                evidence_id=f"EV-PRS-{uuid.uuid4().hex[:6].upper()}",
+                                source_id=doc.source_id,
+                                source_type=doc_src_type,
+                                evidence_type=EvidenceType.SENTENCE,
+                                text=clean_sent,
+                                page_number=block.location.page,
+                                section=block.location.section,
+                                line_number=block.location.line_start or line_idx,
+                                extraction_method=doc_parser_method
+                            )
+                            all_extracted_items.append(item)
+
+            # 6. Fallback Lightweight LLM Extraction for unstructured content
+            if len(all_extracted_items) - prose_count_before < 2 and len(doc.raw_text) > 50:
+                try:
+                    llm_items = self.llm_extractor.extract(doc)
+                    for item in llm_items:
+                        dedup_key = item.text.strip().lower()
+                        if dedup_key not in seen_texts:
+                            seen_texts.add(dedup_key)
+                            all_extracted_items.append(item)
+                except Exception:
+                    pass
+
+        # Build categorized evidence_data structure matching Section 10 contract
+        pdf_data: List[str] = []
+        pdf_page: Optional[int] = None
+        
+        url_data: List[str] = []
+        text_data: List[str] = []
+        llm_data: List[str] = []
+        llm_page: Optional[int] = None
+
+        for item in all_extracted_items:
+            if item.extraction_method == ExtractionMethod.LLM:
+                llm_data.append(item.text)
+                if item.page_number and llm_page is None:
+                    llm_page = item.page_number
+            elif item.source_type == "pdf":
+                pdf_data.append(item.text)
+                if item.page_number and pdf_page is None:
+                    pdf_page = item.page_number
+            elif item.source_type == "url":
+                url_data.append(item.text)
+            else:
+                text_data.append(item.text)
+
+        evidence_data: Dict[str, Any] = {
+            "pdf": {
+                "data": pdf_data,
+                "page_number": pdf_page,
+                "extraction_method": "document_parser"
+            },
+            "url": {
+                "data": url_data,
+                "page_number": None,
+                "extraction_method": "html_parser"
+            },
+            "text": {
+                "data": text_data,
+                "page_number": None,
+                "extraction_method": "text_parser"
+            },
+            "llm": {
+                "data": llm_data,
+                "page_number": llm_page,
+                "extraction_method": "llm"
+            }
+        }
+
         processed_count = sum(1 for s in sources if s.status == SourceStatus.PROCESSED)
-
-        summary = ProcessingSummary(
-            sources_received=len(user_source_inputs),
-            sources_processed=processed_count,
-            evidence_items_extracted=total_extracted,
-            warnings=warnings,
-            processing_time_seconds=elapsed_seconds
+        overall_status = (
+            "EXTRACTED" if processed_count == len(sources) and sources
+            else "PARTIAL" if processed_count > 0
+            else "FAILED"
         )
 
-        return StructuredEvidence(
-            request_id=req_id,
-            product_identity=identity,
-            evidence=evidence,
-            processing_summary=summary
+        source_ids_list = [s.source_id for s in sources]
+
+        result = StructuredEvidence(
+            product_id=product_id,
+            source_ids=source_ids_list,
+            evidence_data=evidence_data,
+            status=overall_status
         )
+
+        try:
+            import os
+            os.makedirs(OUTPUT_DIR, exist_ok=True)
+            safe_filename = re.sub(r'[^A-Za-z0-9_\-]', '_', str(product_id))
+            file_path = OUTPUT_DIR / f"{safe_filename}.json"
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(result.model_dump_json(indent=2))
+        except Exception as e:
+            print(f"Warning: Failed to save Module 3 evidence output file: {e}")
+
+        return result

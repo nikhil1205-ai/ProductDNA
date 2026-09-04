@@ -13,43 +13,8 @@
       "size_bytes": 616,
       "content_hash": "436185a31815188c047ec7207216e7014f4e338e17d14192f597af003795f4ad",
       "page_count": 1,
-      "retrieved_at": "2026-09-04T09:12:42.195471+00:00"
+      "retrieved_at": "2026-09-04T10:58:12.826732+00:00"
     },
-    "created_at": "2026-09-04T09:12:42.195598+00:00"
-  },
-  "SRC-002": {
-    "source_id": "SRC-002",
-    "request_id": "REQ-20260831-001",
-    "source_type": "url",
-    "source_subtype": "website",
-    "source_name": "https://niyantra-sih.vercel.app/",
-    "origin": "user_provided",
-    "status": "processed",
-    "metadata": {
-      "url": "https://niyantra-sih.vercel.app/",
-      "filename": "niyantra-sih_vercel_app.html",
-      "content_type": "text/html; charset=utf-8",
-      "size_bytes": 1580,
-      "content_hash": "7149c7bbcd63efd5266c2ac5762de7691379ebeaac9ec04bbef313b9dcaa4375",
-      "retrieved_at": "2026-09-04T09:29:43.347002+00:00"
-    },
-    "created_at": "2026-09-04T09:29:43.347111+00:00"
-  },
-  "SRC-003": {
-    "source_id": "SRC-003",
-    "request_id": "REQ-20260831-001",
-    "source_type": "text",
-    "source_subtype": "technical_notes",
-    "source_name": "Product Resource",
-    "origin": "user_provided",
-    "status": "processed",
-    "metadata": {
-      "filename": "Product Resource",
-      "content_type": "text/plain",
-      "size_bytes": 46,
-      "content_hash": "d2dd6429768837108977de1d677850ef99bdf736b71c679c7856e6b9310cf493",
-      "retrieved_at": "2026-09-04T09:30:38.881100+00:00"
-    },
-    "created_at": "2026-09-04T09:30:38.881145+00:00"
+    "created_at": "2026-09-04T10:58:12.827407+00:00"
   }
 }

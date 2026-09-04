@@ -1,10 +1,12 @@
 """
-Module 3 URL Evidence Extractor
+Module 3 URL / HTML Content Evidence Line Extractor
 """
 
-from typing import List
+import uuid
+from typing import List, Set
 from .base import BaseExtractor
 from ..models.document_models import Document
+from ..models.extraction_models import EvidenceItem, EvidenceType, ExtractionMethod
 from Evidence_collection_sources_module_2.models.source_models import SourceType
 
 class URLExtractor(BaseExtractor):
@@ -20,7 +22,7 @@ class URLExtractor(BaseExtractor):
         "sign in", "cart", "checkout", "search"
     }
 
-    def extract(self, document: Document) -> List[str]:
+    def extract(self, document: Document) -> List[EvidenceItem]:
         src_type = document.metadata.get("source_type")
         if src_type not in (SourceType.URL, "url"):
             return []
@@ -28,8 +30,8 @@ class URLExtractor(BaseExtractor):
         if not document.raw_text or len(document.raw_text.strip()) < 10:
             return []
 
-        extracted: List[str] = []
-        seen: set = set()
+        extracted: List[EvidenceItem] = []
+        seen: Set[str] = set()
 
         for block in document.text_blocks:
             text = block.text.strip()
@@ -37,7 +39,7 @@ class URLExtractor(BaseExtractor):
                 continue
 
             lines = text.split("\n")
-            for line in lines:
+            for line_idx, line in enumerate(lines, start=1):
                 line_clean = line.strip()
                 if not line_clean or len(line_clean) < 15:
                     continue
@@ -48,6 +50,16 @@ class URLExtractor(BaseExtractor):
 
                 if line_lower not in seen:
                     seen.add(line_lower)
-                    extracted.append(line_clean)
+                    item = EvidenceItem(
+                        evidence_id=f"EV-URL-{uuid.uuid4().hex[:6].upper()}",
+                        source_id=document.source_id,
+                        source_type="url",
+                        evidence_type=EvidenceType.SENTENCE if "." in line_clean else EvidenceType.LINE,
+                        text=line_clean,
+                        section=block.location.section,
+                        line_number=block.location.line_start or line_idx,
+                        extraction_method=ExtractionMethod.HTML_PARSER
+                    )
+                    extracted.append(item)
 
         return extracted

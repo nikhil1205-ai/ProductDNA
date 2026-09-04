@@ -5,16 +5,17 @@ Module 3 Extractor Base & Provider Interfaces
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 from ..models.document_models import Document
+from ..models.extraction_models import EvidenceItem
 
 class BaseExtractor(ABC):
     """
     Abstract Base Class for Evidence Extractors.
-    Extracts plain text/sentence evidence from processed Document objects.
+    Extracts structured EvidenceItem objects (or evidence statements) from processed Document objects.
     """
     
     @abstractmethod
-    def extract(self, document: Document) -> List[str]:
-        """Extract evidence text/sentences from document."""
+    def extract(self, document: Document) -> List[EvidenceItem]:
+        """Extract evidence units with provenance from document."""
         pass
 
 class LLMExtractionProvider(ABC):
@@ -30,5 +31,5 @@ class LLMExtractionProvider(ABC):
         source_id: str,
         product_context: Optional[Dict[str, Any]] = None
     ) -> List[str]:
-        """Use LLM to extract semantic evidence statements."""
+        """Use LLM to extract source-grounded evidence sentences."""
         pass

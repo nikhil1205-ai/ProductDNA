@@ -17,6 +17,8 @@ class URLProcessor(BaseProcessor):
     Extracts page title, main textual content, tables, and removes boilerplate noise.
     """
     
+    NOISE_TAGS = ["script", "style", "nav", "footer", "header", "aside", "noscript", "svg", "form", "iframe"]
+    
     def process(self, source: Source, source_input: SourceInput) -> Document:
         raw_bytes = source_input.file_bytes
         html_str = ""
@@ -26,7 +28,7 @@ class URLProcessor(BaseProcessor):
                 html_str = raw_bytes.decode("utf-8", errors="replace")
             except Exception:
                 html_str = str(raw_bytes)
-        elif source_input.metadata.get("text_content"):
+        elif source_input.metadata and source_input.metadata.get("text_content"):
             html_str = source_input.metadata["text_content"]
         else:
             html_str = source_input.value
@@ -38,12 +40,19 @@ class URLProcessor(BaseProcessor):
         if doc_title and source.metadata:
             source.metadata.title = doc_title
 
-        for element in soup(["script", "style", "nav", "footer", "header", "aside", "noscript", "svg"]):
+        # Remove boilerplate HTML tags
+        for element in soup(self.NOISE_TAGS):
             element.decompose()
+
+        # Remove elements with noise classes or ids (cookie banners, popups, headers, footers)
+        for element in soup.find_all(True):
+            class_or_id = " ".join(element.get("class", [])) + " " + (element.get("id") or "")
+            class_or_id_lower = class_or_id.lower()
+            if any(kw in class_or_id_lower for kw in ["cookie", "banner", "popup", "nav-bar", "header", "footer", "consent", "privacy"]):
+                element.decompose()
 
         text_blocks: List[TextBlock] = []
         tables: List[Table] = []
-        sections: List[Section] = []
         
         current_section = "General Overview"
         block_idx = 1
@@ -121,5 +130,5 @@ class URLProcessor(BaseProcessor):
             text_blocks=unique_blocks,
             tables=tables,
             raw_text=raw_text,
-            metadata={"source_type": source.source_type, "content_type": "text/html"}
+            metadata={"source_type": "url", "content_type": "text/html"}
         )

@@ -1,5 +1,5 @@
 {
-  "request_id": "REQ-20260904-D6E42222",
+  "request_id": "REQ-20260904-318D15F6",
   "input_type": "CSV",
   "identity": {
     "product_name": "3M 775L Stikit Film P320 - Cubitron II 50 Disc/Box",
@@ -25,7 +25,7 @@
     "extension": ".csv",
     "mime_type": "text/csv",
     "size_bytes": 1667,
-    "created_at": "2026-09-04T10:01:34.878141+00:00",
+    "created_at": "2026-09-04T10:33:53.850610+00:00",
     "checksum": "a63114df3a9dd73ea975faea2150e88aca2ecc50c519958309a66ddfa80f6478",
     "source_url": null,
     "retrieved_at": null,

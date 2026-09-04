@@ -1,23 +1,23 @@
 {
-  "request_id": "REQ-20260904-1812A9EE",
+  "request_id": "REQ-20260904-E6D3330A",
   "input_type": "CSV",
   "identity": {
-    "product_name": "9A-570-240 Abranet 2.75x30",
+    "product_name": "DCB518ASTS06G Diablo 1/2\"x18\" - Sanding Belt 6pc",
     "brand": null,
-    "manufacturer": "Mirka Abrasives Inc (MIRUS)",
+    "manufacturer": "Freud Inc (2435)",
     "model": null,
     "sku": null,
-    "part_number": "9A-570-240"
+    "part_number": "DCB518ASTS06G"
   },
   "source_record": {
-    "row_number": 10,
+    "row_number": 1,
     "raw": {
-      "Mfg_Part_Num": "9A-570-240",
-      "Part_Desc": "9A-570-240 Abranet 2.75x30",
+      "Mfg_Part_Num": "DCB518ASTS06G",
+      "Part_Desc": "DCB518ASTS06G Diablo 1/2\"x18\" - Sanding Belt 6pc",
       "E1_Brand": "-- Unbranded --",
       "Unilog_Brand": "-- No Unilog Brand --",
       "DIB_Brand": "-- No DIB Brand --",
-      "Part_Manuf": "Mirka Abrasives Inc (MIRUS)"
+      "Part_Manuf": "Freud Inc (2435)"
     }
   },
   "metadata": {
@@ -25,11 +25,11 @@
     "extension": ".csv",
     "mime_type": "text/csv",
     "size_bytes": 1667,
-    "created_at": "2026-09-04T10:01:34.884055+00:00",
+    "created_at": "2026-09-04T10:33:53.815130+00:00",
     "checksum": "a63114df3a9dd73ea975faea2150e88aca2ecc50c519958309a66ddfa80f6478",
     "source_url": null,
     "retrieved_at": null,
-    "row_number": 10,
+    "row_number": 1,
     "total_rows": 11,
     "total_columns": 6
   },

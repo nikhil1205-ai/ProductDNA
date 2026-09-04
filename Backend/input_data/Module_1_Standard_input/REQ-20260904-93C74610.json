@@ -1,23 +1,23 @@
 {
-  "request_id": "REQ-20260904-6088CCC4",
+  "request_id": "REQ-20260904-93C74610",
   "input_type": "CSV",
   "identity": {
-    "product_name": "3M 775L Stikit Film P220 - Cubitron II 50 Disc/Box",
+    "product_name": "5B-332-080 HIOLIT 5\" P80",
     "brand": null,
-    "manufacturer": "Jam Industrial Supply LLC (JAMIN)",
+    "manufacturer": "Mirka Abrasives Inc (MIRUS)",
     "model": null,
     "sku": null,
-    "part_number": "3MABR-7100075692"
+    "part_number": "5B-332-080"
   },
   "source_record": {
-    "row_number": 6,
+    "row_number": 8,
     "raw": {
-      "Mfg_Part_Num": "3MABR-7100075692",
-      "Part_Desc": "3M 775L Stikit Film P220 - Cubitron II 50 Disc/Box",
+      "Mfg_Part_Num": "5B-332-080",
+      "Part_Desc": "5B-332-080 HIOLIT 5\" P80",
       "E1_Brand": "-- Unbranded --",
       "Unilog_Brand": "-- No Unilog Brand --",
       "DIB_Brand": "-- No DIB Brand --",
-      "Part_Manuf": "Jam Industrial Supply LLC (JAMIN)"
+      "Part_Manuf": "Mirka Abrasives Inc (MIRUS)"
     }
   },
   "metadata": {
@@ -25,11 +25,11 @@
     "extension": ".csv",
     "mime_type": "text/csv",
     "size_bytes": 1667,
-    "created_at": "2026-09-04T10:01:34.876989+00:00",
+    "created_at": "2026-09-04T10:33:53.852454+00:00",
     "checksum": "a63114df3a9dd73ea975faea2150e88aca2ecc50c519958309a66ddfa80f6478",
     "source_url": null,
     "retrieved_at": null,
-    "row_number": 6,
+    "row_number": 8,
     "total_rows": 11,
     "total_columns": 6
   },

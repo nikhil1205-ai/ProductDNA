@@ -1,23 +1,23 @@
 {
-  "request_id": "REQ-20260904-E9A4B06C",
+  "request_id": "REQ-20260904-CD458D87",
   "input_type": "CSV",
   "identity": {
-    "product_name": "9A-570-320 Abranet 2.75x30",
+    "product_name": "3M 775L Stikit Film P150 - Cubitron II 50 Disc/Box",
     "brand": null,
-    "manufacturer": "Mirka Abrasives Inc (MIRUS)",
+    "manufacturer": "Jam Industrial Supply LLC (JAMIN)",
     "model": null,
     "sku": null,
-    "part_number": "9A-570-320"
+    "part_number": "3MABR-7100075678"
   },
   "source_record": {
-    "row_number": 11,
+    "row_number": 2,
     "raw": {
-      "Mfg_Part_Num": "9A-570-320",
-      "Part_Desc": "9A-570-320 Abranet 2.75x30",
+      "Mfg_Part_Num": "3MABR-7100075678",
+      "Part_Desc": "3M 775L Stikit Film P150 - Cubitron II 50 Disc/Box",
       "E1_Brand": "-- Unbranded --",
       "Unilog_Brand": "-- No Unilog Brand --",
       "DIB_Brand": "-- No DIB Brand --",
-      "Part_Manuf": "Mirka Abrasives Inc (MIRUS)"
+      "Part_Manuf": "Jam Industrial Supply LLC (JAMIN)"
     }
   },
   "metadata": {
@@ -25,11 +25,11 @@
     "extension": ".csv",
     "mime_type": "text/csv",
     "size_bytes": 1667,
-    "created_at": "2026-09-04T10:01:34.885611+00:00",
+    "created_at": "2026-09-04T10:33:53.816566+00:00",
     "checksum": "a63114df3a9dd73ea975faea2150e88aca2ecc50c519958309a66ddfa80f6478",
     "source_url": null,
     "retrieved_at": null,
-    "row_number": 11,
+    "row_number": 2,
     "total_rows": 11,
     "total_columns": 6
   },
