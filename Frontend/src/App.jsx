@@ -141,6 +141,12 @@ export default function App() {
   const [processSelectedSuccess, setProcessSelectedSuccess] = useState(null);
   const [productsError, setProductsError] = useState(null);
 
+  // --- MODULE 5 STATE ---
+  const [m5Loading, setM5Loading] = useState(false);
+  const [m5Result, setM5Result] = useState(null);
+  const [m5Error, setM5Error] = useState(null);
+  const [m5Show252, setM5Show252] = useState(false);
+
   // --- MODULE 2 PRODUCT RESOURCES STATE ---
   const [activeRequestId, setActiveRequestId] = useState('REQ-20260831-001');
   const [resources, setResources] = useState([]);
@@ -173,26 +179,74 @@ export default function App() {
     }
   };
 
-  // Fetch full details of selected product
+  // Fetch Resources from Backend
+  const fetchResources = async (reqId) => {
+    try {
+      const response = await axios.get(`${RESOURCES_API_URL}?request_id=${reqId || activeRequestId}`);
+      if (Array.isArray(response.data)) {
+        setResources(response.data);
+      }
+    } catch (err) {
+      console.warn("Could not connect to FastAPI /api/resources, using local empty resources list.", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchResources(activeRequestId);
+  }, [activeRequestId]);
+
+  // Fetch full details of selected product and automatically process it
   useEffect(() => {
     if (!selectedProductId) {
       setSelectedProduct(null);
       return;
     }
-    const loadProductDetails = async () => {
+    const loadAndProcessProductDetails = async () => {
       setSelectedProductLoading(true);
+      setProcessSelectedLoading(true);
       setProcessSelectedSuccess(null);
       try {
+        // 1. Load details
         const res = await axios.get(`http://localhost:8000/api/products/module1/${selectedProductId}`);
         setSelectedProduct(res.data);
+        
+        // 2. Automatically process selected product for downstream
+        const processRes = await axios.post('http://localhost:8000/api/products/process-selected', {
+          product_id: selectedProductId
+        });
+        
+        if (processRes.data && processRes.data.status === 'SUCCESS') {
+          setProcessSelectedSuccess(`Product ${selectedProductId} loaded for downstream processing!`);
+          setActiveRequestId(selectedProductId);
+          fetchResources(selectedProductId);
+          
+          const prod = processRes.data.product;
+          if (prod) {
+            const raw = prod.source_record?.raw || {};
+            const displayObj = {
+              PART_NUMBER: raw.PART_NUMBER || raw.Mfg_Part_Num || prod.identity?.part_number || '',
+              BRAND_NAME: raw.BRAND_NAME || raw.E1_Brand || prod.identity?.brand || '',
+              MANUFACTURER_NAME: raw.MANUFACTURER_NAME || raw.Part_Manuf || prod.identity?.manufacturer || '',
+              "SKU - MY_PART_NUMBER": raw["SKU - MY_PART_NUMBER"] || prod.identity?.sku || '',
+              SHORT_DESC: raw.SHORT_DESC || raw.Part_Desc || prod.identity?.product_name || 'Unknown Product',
+              Dept: raw.Dept || '',
+              Class: raw.Class || '',
+              Fine: raw.Fine || '',
+              ...raw
+            };
+            setM1Response(displayObj);
+            setM1RawResponse(prod);
+          }
+        }
       } catch (err) {
-        console.error("Failed to load selected product details:", err);
+        console.error("Failed to load or process selected product details:", err);
         setSelectedProduct(null);
       } finally {
         setSelectedProductLoading(false);
+        setProcessSelectedLoading(false);
       }
     };
-    loadProductDetails();
+    loadAndProcessProductDetails();
   }, [selectedProductId]);
 
   // Initial load for products and registry
@@ -211,57 +265,23 @@ export default function App() {
     fetchRegistry();
   }, []);
 
-  // Fetch Resources from Backend
-  const fetchResources = async (reqId) => {
+  // Module 5 — Semantic Interpretation Handler
+  const handleRunModule5 = async () => {
+    if (!selectedProduct) return;
+    setM5Loading(true);
+    setM5Error(null);
+    setM5Result(null);
+    setM5Show252(false);
     try {
-      const response = await axios.get(`${RESOURCES_API_URL}?request_id=${reqId || activeRequestId}`);
-      if (Array.isArray(response.data)) {
-        setResources(response.data);
-      }
-    } catch (err) {
-      console.warn("Could not connect to FastAPI /api/resources, using local empty resources list.", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchResources(activeRequestId);
-  }, [activeRequestId]);
-
-  const handleProcessSelectedProduct = async () => {
-    if (!selectedProductId) return;
-    setProcessSelectedLoading(true);
-    setProcessSelectedSuccess(null);
-    try {
-      const res = await axios.post('http://localhost:8000/api/products/process-selected', {
-        product_id: selectedProductId
+      const res = await axios.post('http://localhost:8000/api/module5/semantic-interpretation', {
+        product: selectedProduct,
+        organization: orgRegistry.length > 0 ? { records: orgRegistry } : null,
       });
-      if (res.data && res.data.status === 'SUCCESS') {
-        setProcessSelectedSuccess(`Product ${selectedProductId} loaded for downstream processing!`);
-        setActiveRequestId(selectedProductId);
-        fetchResources(selectedProductId);
-
-        const prod = res.data.product;
-        if (prod) {
-          const raw = prod.source_record?.raw || {};
-          const displayObj = {
-            PART_NUMBER: raw.PART_NUMBER || raw.Mfg_Part_Num || prod.identity?.part_number || '',
-            BRAND_NAME: raw.BRAND_NAME || raw.E1_Brand || prod.identity?.brand || '',
-            MANUFACTURER_NAME: raw.MANUFACTURER_NAME || raw.Part_Manuf || prod.identity?.manufacturer || '',
-            "SKU - MY_PART_NUMBER": raw["SKU - MY_PART_NUMBER"] || prod.identity?.sku || '',
-            SHORT_DESC: raw.SHORT_DESC || raw.Part_Desc || prod.identity?.product_name || 'Unknown Product',
-            Dept: raw.Dept || '',
-            Class: raw.Class || '',
-            Fine: raw.Fine || '',
-            ...raw
-          };
-          setM1Response(displayObj);
-          setM1RawResponse(prod);
-        }
-      }
+      setM5Result(res.data);
     } catch (err) {
-      alert(err.response?.data?.detail || err.message || 'Failed to process selected product.');
+      setM5Error(err.response?.data?.detail || err.message || 'Semantic interpretation failed.');
     } finally {
-      setProcessSelectedLoading(false);
+      setM5Loading(false);
     }
   };
 
@@ -421,9 +441,18 @@ export default function App() {
 
   // CSV Generator and Downloader
   const handleDownloadCsv = () => {
-    if (!m1Response) return;
-    const headers = Object.keys(m1Response);
-    const values = Object.values(m1Response).map(val => {
+    let dataToDownload = m1Response;
+    let fileName = `StandardProductInput_${m1Response?.PART_NUMBER || 'Output'}.csv`;
+
+    if (m5Result && m5Result.delivery_record) {
+      dataToDownload = m5Result.delivery_record;
+      fileName = `ProductDNA_Output_${selectedProductId || 'Record'}.csv`;
+    } else if (!m1Response) {
+      return;
+    }
+
+    const headers = Object.keys(dataToDownload);
+    const values = Object.values(dataToDownload).map(val => {
       const stringVal = val === null || val === undefined ? '' : String(val);
       if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n')) {
         return `"${stringVal.replace(/"/g, '""')}"`;
@@ -436,7 +465,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `StandardProductInput_${m1Response.PART_NUMBER || 'PDSH4816AF'}.csv`);
+    link.setAttribute('download', fileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -474,14 +503,14 @@ export default function App() {
               <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-indigo-300">
                 ProductDNA Platform
               </h1>
-              <p className="text-xs text-slate-400 font-medium">8-Module Pipeline Architecture</p>
+              <p className="text-xs text-slate-400 font-medium tracking-wide">Intelligent Product Resolution & Semantic Enrichment</p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-2"></span>
-              Backend Ready (:8000)
+              Backend Ready 
             </span>
           </div>
         </div>
@@ -497,7 +526,7 @@ export default function App() {
             {/* BOX 1: Select Input Type (Module 1) */}
             <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-6 shadow-xl space-y-6">
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                <label className="block text-sm font-semibold text-white uppercase tracking-wider mb-3">
                   1. Select Input Type
                 </label>
                 <div className="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800">
@@ -575,7 +604,7 @@ export default function App() {
                 )}
 
                 <button type="submit" disabled={m1Loading} className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg flex items-center justify-center space-x-2 transition-all">
-                  {m1Loading ? <RefreshCw className="w-4 h-4 animate-spin text-white" /> : <span>Process Product Input</span>}
+                  {m1Loading ? <RefreshCw className="w-4 h-4 animate-spin text-white" /> : <span>Upload Product Input</span>}
                 </button>
               </form>
 
@@ -583,30 +612,18 @@ export default function App() {
               {module1Products.length > 0 && (
                 <div className="pt-5 border-t border-slate-800 space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
-                      <Tag className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="text-sm font-semibold text-white uppercase tracking-wider flex items-center space-x-1.5">
+                      <Tag className="w-4 h-4 text-indigo-400" />
                       <span>PRODUCT SELECTOR</span>
                     </span>
                     <button
                       type="button"
                       onClick={fetchModule1Products}
-                      className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center space-x-1"
+                      className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center space-x-1 bg-indigo-500/10 px-2 py-1 rounded-md"
                     >
                       <RefreshCw className={`w-3 h-3 ${productsLoading ? 'animate-spin' : ''}`} />
                       <span>Refresh</span>
                     </button>
-                  </div>
-
-                  {/* Search Input */}
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      value={productSearchTerm}
-                      onChange={(e) => setProductSearchTerm(e.target.value)}
-                      placeholder="🔍 Search product..."
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none"
-                    />
                   </div>
 
                   {/* Dropdown Selector */}
@@ -686,25 +703,30 @@ export default function App() {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={handleProcessSelectedProduct}
-                        disabled={processSelectedLoading}
-                        className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg flex items-center justify-center space-x-2 transition-all active:scale-[0.98]"
-                      >
-                        {processSelectedLoading ? (
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
-                        ) : (
-                          <>
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>Process Selected Product</span>
-                          </>
-                        )}
-                      </button>
-
                       {processSelectedSuccess && (
                         <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 text-[11px] text-center font-medium">
                           {processSelectedSuccess}
+                        </div>
+                      )}
+
+                      {/* Module 5 Trigger Button */}
+                      <button
+                        type="button"
+                        onClick={handleRunModule5}
+                        disabled={m5Loading}
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-lg shadow-violet-600/20 flex items-center justify-center space-x-2 transition-all active:scale-[0.98]"
+                      >
+                        {m5Loading ? (
+                          <><RefreshCw className="w-3.5 h-3.5 animate-spin" /><span>Interpreting…</span></>
+                        ) : (
+                          <><Sparkles className="w-3.5 h-3.5" /><span>Extract & Structure Data</span></>
+                        )}
+                      </button>
+
+                      {m5Error && (
+                        <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-400 text-[11px] flex items-start space-x-2">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span>{m5Error}</span>
                         </div>
                       )}
                     </div>
@@ -968,16 +990,7 @@ export default function App() {
               )}
             </div>
 
-            {/* STRUCTURED OUTPUT RESULT (Module 1) */}
-            {!m1Response && !m1Loading && (
-              <div className="bg-slate-900/60 rounded-2xl border border-slate-800/80 p-12 text-center text-slate-500 space-y-3">
-                <Box className="w-12 h-12 text-slate-700 mx-auto" />
-                <h3 className="text-sm font-semibold text-slate-400">Structured Output</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  Upload a CSV dataset or PDF document to extract candidate product identities and view generated StandardProductInput objects.
-                </p>
-              </div>
-            )}
+
 
             {m1Response && (
               <div className="space-y-6">
@@ -988,9 +1001,6 @@ export default function App() {
                         <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
                         Structured Output
                       </span>
-                      <span className="text-xs font-mono text-slate-400">
-                        PART #: <strong className="text-slate-100">{m1Response.PART_NUMBER}</strong>
-                      </span>
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -1000,7 +1010,7 @@ export default function App() {
                         className="inline-flex items-center space-x-2 text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-md shadow-emerald-600/20 active:scale-[0.98] transition-all"
                       >
                         <Download className="w-3.5 h-3.5" />
-                        <span>Download CSV</span>
+                        <span>Download Output CSV</span>
                       </button>
 
                       <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
@@ -1025,49 +1035,8 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-
-                  <div>
-                    <h3 className="text-base font-bold text-white tracking-tight">
-                      {m1Response.SHORT_DESC || m1Response.Part_Desc}
-                    </h3>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-[11px] text-slate-300 font-mono border border-slate-700">
-                        Brand: <strong className="text-indigo-300">{m1Response.BRAND_NAME}</strong>
-                      </span>
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-[11px] text-slate-300 font-mono border border-slate-700">
-                        Mfg: <strong className="text-indigo-300">{m1Response.MANUFACTURER_NAME}</strong>
-                      </span>
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-[11px] text-slate-300 font-mono border border-slate-700">
-                        SKU: <strong className="text-emerald-400">{m1Response["SKU - MY_PART_NUMBER"]}</strong>
-                      </span>
-                    </div>
-                  </div>
                 </div>
 
-                {viewMode === 'SUMMARY' && (
-                  <div className="space-y-5">
-                    <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-5 shadow-xl space-y-3">
-                      <div className="flex items-center space-x-2 border-b border-slate-800 pb-2">
-                        <Layers className="w-4 h-4 text-indigo-400" />
-                        <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Classification & Taxonomy</h4>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3 text-xs">
-                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                          <span className="text-[10px] text-slate-500 block uppercase font-semibold">Dept</span>
-                          <span className="text-slate-200 font-medium">{m1Response.Dept}</span>
-                        </div>
-                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                          <span className="text-[10px] text-slate-500 block uppercase font-semibold">Class</span>
-                          <span className="text-slate-200 font-medium">{m1Response.Class}</span>
-                        </div>
-                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                          <span className="text-[10px] text-slate-500 block uppercase font-semibold">Fine</span>
-                          <span className="text-slate-200 font-medium">{m1Response.Fine}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {viewMode === 'JSON' && (
                   <div className="bg-slate-900/90 rounded-2xl border border-slate-800 p-5 shadow-xl space-y-3">
@@ -1099,6 +1068,114 @@ export default function App() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* MODULE 5 SEMANTIC INTERPRETATION RESULTS */}
+            {m5Result && (
+              <div className="bg-slate-900/90 rounded-2xl border border-violet-500/30 p-6 shadow-xl space-y-5">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                      <Sparkles className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">Structured Extraction</h3>
+                      <p className="text-[11px] text-slate-400">Candidate Product Data Extraction</p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    CANDIDATE
+                  </span>
+                </div>
+
+                {/* Stats Row */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-slate-950 rounded-xl border border-slate-800 p-3 text-center">
+                    <span className="text-lg font-bold text-violet-400">{m5Result.populated_fields_count}</span>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Fields Populated</p>
+                  </div>
+                  <div className="bg-slate-950 rounded-xl border border-slate-800 p-3 text-center">
+                    <span className="text-lg font-bold text-indigo-400">{m5Result.inferred_fields_count}</span>
+                    <p className="text-[10px] text-slate-500 mt-0.5">LLM Inferred</p>
+                  </div>
+                  <div className="bg-slate-950 rounded-xl border border-slate-800 p-3 text-center">
+                    <span className="text-lg font-bold text-emerald-400">{m5Result.processing_time_ms?.toFixed(0)}ms</span>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Processing Time</p>
+                  </div>
+                </div>
+
+
+                {/* Semantic Metadata — per-field provenance */}
+                {m5Result.semantic_metadata && m5Result.semantic_metadata.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                      <Database className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Field Provenance ({m5Result.semantic_metadata.length} fields)</span>
+                    </h4>
+                    <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1">
+                      {m5Result.semantic_metadata.map((meta, idx) => (
+                        <div key={idx} className="bg-slate-950 rounded-lg border border-slate-800 px-3 py-2 flex flex-wrap items-center gap-2 text-[11px]">
+                          <span className="font-mono font-bold text-indigo-300 shrink-0">{meta.field}</span>
+                          <span className="text-slate-400 flex-1 truncate">{meta.value || '—'}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border shrink-0 ${
+                            meta.source === 'SOURCE_EVIDENCE' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                            meta.source === 'ORG_CONTEXT' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                            'bg-violet-500/10 text-violet-400 border-violet-500/20'
+                          }`}>{meta.source}</span>
+                          <span className="text-slate-600 shrink-0">{((meta.llm_confidence || 0) * 100).toFixed(0)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 252-Column Candidate Preview */}
+                <div className="border border-slate-800 rounded-xl overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setM5Show252(!m5Show252)}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-slate-950 text-xs font-semibold text-slate-300 hover:text-white transition-colors"
+                  >
+                    <span className="flex items-center space-x-2">
+                      <Code className="w-3.5 h-3.5 text-violet-400" />
+                      <span>252-Column Candidate Delivery Record</span>
+                    </span>
+                    <span className="text-slate-500">{m5Show252 ? '▲ Collapse' : '▼ Expand'}</span>
+                  </button>
+                  {m5Show252 && (
+                    <div className="bg-slate-950/50 border-t border-slate-800 p-4 max-h-96 overflow-auto">
+                      <table className="w-full text-[11px] font-mono border-collapse">
+                        <thead>
+                          <tr>
+                            <th className="text-left text-slate-500 font-semibold pb-2 pr-4 w-48">Field</th>
+                            <th className="text-left text-slate-500 font-semibold pb-2">Value</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(m5Result.delivery_record || {}).map(([key, val]) => (
+                            <tr key={key} className={`border-t border-slate-800/50 ${val ? '' : 'opacity-40'}`}>
+                              <td className="py-1 pr-4 text-indigo-300 align-top whitespace-nowrap">{key}</td>
+                              <td className="py-1 text-slate-300 break-all">{val || <span className="text-slate-600 italic">—</span>}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* STRUCTURED OUTPUT RESULT (Module 1) */}
+            {!m1Response && !m1Loading && !m5Result && (
+              <div className="bg-slate-900/60 rounded-2xl border border-slate-800/80 p-12 text-center text-slate-500 space-y-3">
+                <Box className="w-12 h-12 text-slate-700 mx-auto" />
+                <h3 className="text-sm font-semibold text-slate-400">Structured Output</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Upload a CSV dataset or PDF document to extract candidate product identities and view generated StandardProductInput objects.
+                </p>
               </div>
             )}
 
