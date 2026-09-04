@@ -33,10 +33,16 @@ app.include_router(module3_router)
 app.include_router(module5_router)
 
 
-# Enable CORS for local frontend communication
+# Enable CORS for local & production Vercel frontend communication
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://product-dna-topaz.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8000",
+        "*"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
