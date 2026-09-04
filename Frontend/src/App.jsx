@@ -27,8 +27,9 @@ import {
   Search
 } from 'lucide-react';
 
-const MODULE1_API_URL = 'http://localhost:8000/api/product-input';
-const RESOURCES_API_URL = 'http://localhost:8000/api/resources';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const MODULE1_API_URL = `${API_BASE_URL}/api/product-input`;
+const RESOURCES_API_URL = `${API_BASE_URL}/api/resources`;
 
 const STATIC_PRODUCT_OUTPUT = {
   "MFR URL": "https://www.frigidaire.com/en/p/owner-center/product-support/PDSH4816AF",
@@ -164,7 +165,7 @@ export default function App() {
     setProductsLoading(true);
     setProductsError(null);
     try {
-      const res = await axios.get('http://localhost:8000/api/products/module1');
+      const res = await axios.get(`${API_BASE_URL}/api/products/module1`);
       if (res.data && Array.isArray(res.data.products)) {
         setModule1Products(res.data.products);
         if (res.data.products.length > 0 && !selectedProductId) {
@@ -207,11 +208,11 @@ export default function App() {
       setProcessSelectedSuccess(null);
       try {
         // 1. Load details
-        const res = await axios.get(`http://localhost:8000/api/products/module1/${selectedProductId}`);
+        const res = await axios.get(`${API_BASE_URL}/api/products/module1/${selectedProductId}`);
         setSelectedProduct(res.data);
         
         // 2. Automatically process selected product for downstream
-        const processRes = await axios.post('http://localhost:8000/api/products/process-selected', {
+        const processRes = await axios.post(`${API_BASE_URL}/api/products/process-selected`, {
           product_id: selectedProductId
         });
         
@@ -254,7 +255,7 @@ export default function App() {
     fetchModule1Products();
     const fetchRegistry = async () => {
       try {
-        const res = await axios.get('http://localhost:8000/api/product-registry');
+        const res = await axios.get(`${API_BASE_URL}/api/product-registry`);
         if (res.data && Array.isArray(res.data.registry)) {
           setOrgRegistry(res.data.registry);
         }
@@ -273,7 +274,7 @@ export default function App() {
     setM5Result(null);
     setM5Show252(false);
     try {
-      const res = await axios.post('http://localhost:8000/api/module5/semantic-interpretation', {
+      const res = await axios.post(`${API_BASE_URL}/api/module5/semantic-interpretation`, {
         product: selectedProduct,
         organization: orgRegistry.length > 0 ? { records: orgRegistry } : null,
       });
