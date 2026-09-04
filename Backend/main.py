@@ -18,6 +18,7 @@ from product_integration_module_1.schemas.response_schema import StandardProduct
 
 from Evidence_collection_sources_module_2.api.routes import router as module2_router
 from Evidence_extraction_module_3.api.routes import router as module3_router
+from LLM_Semantic_Interpretation_module_5.router import module5_router
 
 app = FastAPI(
     title="ProductDNA — Product Intelligence Engine",
@@ -28,6 +29,8 @@ app = FastAPI(
 # Include Module 2 Product Resources Router & Module 3 Evidence Extraction Router
 app.include_router(module2_router)
 app.include_router(module3_router)
+# Include Module 5 Semantic Interpretation Router
+app.include_router(module5_router)
 
 
 # Enable CORS for local frontend communication
