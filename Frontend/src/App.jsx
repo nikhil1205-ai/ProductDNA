@@ -23,7 +23,8 @@ import {
   Database,
   Globe,
   FileCode,
-  CheckSquare
+  CheckSquare,
+  Search
 } from 'lucide-react';
 
 const MODULE1_API_URL = 'http://localhost:8000/api/product-input';
@@ -128,6 +129,18 @@ export default function App() {
   const [m1Copied, setM1Copied] = useState(false);
   const [viewMode, setViewMode] = useState('SUMMARY'); // 'SUMMARY' or 'JSON'
 
+  // --- PRODUCT SELECTOR STATE ---
+  const [module1Products, setModule1Products] = useState([]);
+  const [selectedProductId, setSelectedProductId] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [orgRegistry, setOrgRegistry] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [selectedProductLoading, setSelectedProductLoading] = useState(false);
+  const [processSelectedLoading, setProcessSelectedLoading] = useState(false);
+  const [processSelectedSuccess, setProcessSelectedSuccess] = useState(null);
+  const [productsError, setProductsError] = useState(null);
+
   // --- MODULE 2 PRODUCT RESOURCES STATE ---
   const [activeRequestId, setActiveRequestId] = useState('REQ-20260831-001');
   const [resources, setResources] = useState([]);
@@ -139,6 +152,64 @@ export default function App() {
   const [resLoading, setResLoading] = useState(false);
   const [resError, setResError] = useState(null);
   const [selectedResource, setSelectedResource] = useState(null);
+
+  // Fetch Module 1 Products List
+  const fetchModule1Products = async () => {
+    setProductsLoading(true);
+    setProductsError(null);
+    try {
+      const res = await axios.get('http://localhost:8000/api/products/module1');
+      if (res.data && Array.isArray(res.data.products)) {
+        setModule1Products(res.data.products);
+        if (res.data.products.length > 0 && !selectedProductId) {
+          setSelectedProductId(res.data.products[0].product_id);
+        }
+      }
+    } catch (err) {
+      console.warn("Could not fetch Module 1 products list:", err);
+      setProductsError("Failed to load products list.");
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  // Fetch full details of selected product
+  useEffect(() => {
+    if (!selectedProductId) {
+      setSelectedProduct(null);
+      return;
+    }
+    const loadProductDetails = async () => {
+      setSelectedProductLoading(true);
+      setProcessSelectedSuccess(null);
+      try {
+        const res = await axios.get(`http://localhost:8000/api/products/module1/${selectedProductId}`);
+        setSelectedProduct(res.data);
+      } catch (err) {
+        console.error("Failed to load selected product details:", err);
+        setSelectedProduct(null);
+      } finally {
+        setSelectedProductLoading(false);
+      }
+    };
+    loadProductDetails();
+  }, [selectedProductId]);
+
+  // Initial load for products and registry
+  useEffect(() => {
+    fetchModule1Products();
+    const fetchRegistry = async () => {
+      try {
+        const res = await axios.get('http://localhost:8000/api/product-registry');
+        if (res.data && Array.isArray(res.data.registry)) {
+          setOrgRegistry(res.data.registry);
+        }
+      } catch (err) {
+        console.warn("Could not load organization product registry:", err);
+      }
+    };
+    fetchRegistry();
+  }, []);
 
   // Fetch Resources from Backend
   const fetchResources = async (reqId) => {
@@ -155,6 +226,52 @@ export default function App() {
   useEffect(() => {
     fetchResources(activeRequestId);
   }, [activeRequestId]);
+
+  const handleProcessSelectedProduct = async () => {
+    if (!selectedProductId) return;
+    setProcessSelectedLoading(true);
+    setProcessSelectedSuccess(null);
+    try {
+      const res = await axios.post('http://localhost:8000/api/products/process-selected', {
+        product_id: selectedProductId
+      });
+      if (res.data && res.data.status === 'SUCCESS') {
+        setProcessSelectedSuccess(`Product ${selectedProductId} loaded for downstream processing!`);
+        setActiveRequestId(selectedProductId);
+        fetchResources(selectedProductId);
+
+        const prod = res.data.product;
+        if (prod) {
+          const raw = prod.source_record?.raw || {};
+          const displayObj = {
+            PART_NUMBER: raw.PART_NUMBER || raw.Mfg_Part_Num || prod.identity?.part_number || '',
+            BRAND_NAME: raw.BRAND_NAME || raw.E1_Brand || prod.identity?.brand || '',
+            MANUFACTURER_NAME: raw.MANUFACTURER_NAME || raw.Part_Manuf || prod.identity?.manufacturer || '',
+            "SKU - MY_PART_NUMBER": raw["SKU - MY_PART_NUMBER"] || prod.identity?.sku || '',
+            SHORT_DESC: raw.SHORT_DESC || raw.Part_Desc || prod.identity?.product_name || 'Unknown Product',
+            Dept: raw.Dept || '',
+            Class: raw.Class || '',
+            Fine: raw.Fine || '',
+            ...raw
+          };
+          setM1Response(displayObj);
+          setM1RawResponse(prod);
+        }
+      }
+    } catch (err) {
+      alert(err.response?.data?.detail || err.message || 'Failed to process selected product.');
+    } finally {
+      setProcessSelectedLoading(false);
+    }
+  };
+
+  // Format value display helper (Rule 10)
+  const formatValue = (val) => {
+    if (val === null || val === undefined || String(val).trim() === '' || String(val) === 'null' || String(val) === 'undefined' || String(val) === 'NaN') {
+      return <span className="text-slate-500 italic">Not available</span>;
+    }
+    return val;
+  };
 
   const handleCsvFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -230,6 +347,7 @@ export default function App() {
             };
           }
           setM1Response(displayObj);
+          await fetchModule1Products();
         } else {
           throw new Error(res?.data?.error || 'Unknown server error');
         }
@@ -460,6 +578,139 @@ export default function App() {
                   {m1Loading ? <RefreshCw className="w-4 h-4 animate-spin text-white" /> : <span>Process Product Input</span>}
                 </button>
               </form>
+
+              {/* PRODUCT SELECTOR SECTION */}
+              {module1Products.length > 0 && (
+                <div className="pt-5 border-t border-slate-800 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+                      <Tag className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>PRODUCT SELECTOR</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={fetchModule1Products}
+                      className="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center space-x-1"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${productsLoading ? 'animate-spin' : ''}`} />
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+
+                  {/* Search Input */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-3" />
+                    <input
+                      type="text"
+                      value={productSearchTerm}
+                      onChange={(e) => setProductSearchTerm(e.target.value)}
+                      placeholder="🔍 Search product..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Dropdown Selector */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                      Select Product
+                    </label>
+                    <select
+                      value={selectedProductId || ''}
+                      onChange={(e) => setSelectedProductId(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:border-indigo-500 focus:outline-none cursor-pointer"
+                    >
+                      {module1Products
+                        .filter((p) => {
+                          if (!productSearchTerm.trim()) return true;
+                          const term = productSearchTerm.toLowerCase();
+                          return (
+                            (p.product_name && p.product_name.toLowerCase().includes(term)) ||
+                            (p.part_number && p.part_number.toLowerCase().includes(term)) ||
+                            (p.sku && p.sku.toLowerCase().includes(term)) ||
+                            (p.manufacturer && p.manufacturer.toLowerCase().includes(term)) ||
+                            (p.brand && p.brand.toLowerCase().includes(term)) ||
+                            (p.row_number !== null && p.row_number !== undefined && String(p.row_number).includes(term)) ||
+                            (p.product_id && p.product_id.toLowerCase().includes(term))
+                          );
+                        })
+                        .map((p) => (
+                          <option key={p.product_id} value={p.product_id}>
+                            {p.row_number ? `Row ${p.row_number}: ` : ''}{p.product_name || p.part_number || p.product_id}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  {/* Selected Product Details Card */}
+                  {selectedProductLoading ? (
+                    <div className="p-4 bg-slate-950/50 rounded-xl border border-slate-800 text-center text-slate-500 text-xs">
+                      Loading product details...
+                    </div>
+                  ) : selectedProduct ? (
+                    <div className="bg-slate-950/80 rounded-xl border border-slate-800 p-4 space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <span className="text-xs font-semibold text-slate-200">Selected Product</span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          {selectedProduct.status || 'READY_FOR_RESOLUTION'}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1.5 text-xs text-slate-300">
+                        <div>
+                          <strong className="text-slate-200">Product Name: </strong>
+                          <span>{formatValue(selectedProduct.identity?.product_name)}</span>
+                        </div>
+                        <div>
+                          <strong className="text-slate-200">Part Number: </strong>
+                          <span className="font-mono text-indigo-300">{formatValue(selectedProduct.identity?.part_number)}</span>
+                        </div>
+                        <div>
+                          <strong className="text-slate-200">SKU: </strong>
+                          <span className="font-mono">{formatValue(selectedProduct.identity?.sku)}</span>
+                        </div>
+                        <div>
+                          <strong className="text-slate-200">Manufacturer: </strong>
+                          <span>{formatValue(selectedProduct.identity?.manufacturer)}</span>
+                        </div>
+                        <div>
+                          <strong className="text-slate-200">Brand: </strong>
+                          <span>{formatValue(selectedProduct.identity?.brand)}</span>
+                        </div>
+                        <div>
+                          <strong className="text-slate-200">Model: </strong>
+                          <span>{formatValue(selectedProduct.identity?.model)}</span>
+                        </div>
+                        <div>
+                          <strong className="text-slate-200">Source Row: </strong>
+                          <span className="font-mono">{formatValue(selectedProduct.source_record?.row_number || selectedProduct.metadata?.row_number)}</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleProcessSelectedProduct}
+                        disabled={processSelectedLoading}
+                        className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg flex items-center justify-center space-x-2 transition-all active:scale-[0.98]"
+                      >
+                        {processSelectedLoading ? (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Process Selected Product</span>
+                          </>
+                        )}
+                      </button>
+
+                      {processSelectedSuccess && (
+                        <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 text-[11px] text-center font-medium">
+                          {processSelectedSuccess}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </div>
 
             {/* BOX 2: Add Product Resource (Module 2) BELOW Select Input Type */}

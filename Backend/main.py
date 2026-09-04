@@ -135,6 +135,118 @@ async def process_product_input(
             content={"status": "ERROR", "error": f"Internal processing error: {str(ex)}"}
         )
 
+# Helper function to securely resolve Module 1 product files
+def resolve_module1_file(product_id: str) -> Path:
+    base_dir = (Path(__file__).resolve().parent / "input_data" / "Module_1_Standard_input").resolve()
+    clean_id = Path(product_id).name
+    if clean_id.endswith(".json"):
+        clean_id = clean_id[:-5]
+    
+    file_path = (base_dir / f"{clean_id}.json").resolve()
+    
+    if not str(file_path).startswith(str(base_dir)):
+        raise HTTPException(status_code=400, detail="Invalid product ID path.")
+        
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail=f"Product with ID '{product_id}' not found.")
+        
+    return file_path
+
+@app.get("/api/products/module1")
+async def list_module1_products():
+    """Returns summary listing of all standardized products in Module_1_Standard_input."""
+    base_dir = Path(__file__).resolve().parent / "input_data" / "Module_1_Standard_input"
+    if not base_dir.exists():
+        return {"products": []}
+    
+    products = []
+    for json_file in base_dir.glob("*.json"):
+        try:
+            with open(json_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            
+            prod_id = data.get("request_id") or json_file.stem
+            identity = data.get("identity") or {}
+            source_rec = data.get("source_record") or {}
+            
+            row_num = source_rec.get("row_number")
+            if row_num is None:
+                row_num = data.get("metadata", {}).get("row_number")
+
+            products.append({
+                "product_id": prod_id,
+                "filename": json_file.name,
+                "row_number": row_num,
+                "product_name": identity.get("product_name"),
+                "part_number": identity.get("part_number"),
+                "sku": identity.get("sku"),
+                "brand": identity.get("brand"),
+                "manufacturer": identity.get("manufacturer"),
+                "model": identity.get("model"),
+                "status": data.get("status", "READY_FOR_RESOLUTION")
+            })
+        except Exception:
+            continue
+            
+    products.sort(key=lambda x: (x["row_number"] if x["row_number"] is not None else 999999, x["product_id"]))
+    return {"products": products}
+
+@app.get("/api/products/module1/{product_id}")
+async def get_module1_product(product_id: str):
+    """Returns complete StandardProductInput JSON for selected product_id."""
+    file_path = resolve_module1_file(product_id)
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read product file: {str(e)}")
+
+@app.get("/api/product-registry")
+async def get_product_registry():
+    """Returns Organization Product Registry records from CSV."""
+    registry_path = Path(__file__).resolve().parent / "product_resolution_engine" / "org_data" / "product_registry.csv"
+    if not registry_path.exists():
+        return {"registry": []}
+    
+    import csv
+    try:
+        records = []
+        with open(registry_path, mode="r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                records.append(row)
+        return {"registry": records}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load product registry: {str(e)}")
+
+@app.post("/api/products/process-selected")
+async def process_selected_product(request: Request):
+    """Processes only the single selected product for downstream pipeline."""
+    try:
+        body = await request.json()
+        product_id = body.get("product_id")
+        if not product_id:
+            raise HTTPException(status_code=400, detail="Missing product_id in request body")
+        
+        file_path = resolve_module1_file(product_id)
+        with open(file_path, "r", encoding="utf-8") as f:
+            product_data = json.load(f)
+            
+        return {
+            "status": "SUCCESS",
+            "message": f"Successfully loaded product '{product_id}' for downstream processing.",
+            "product_id": product_id,
+            "product": product_data
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process selected product: {str(e)}")
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
