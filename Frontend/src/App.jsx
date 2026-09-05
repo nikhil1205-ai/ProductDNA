@@ -160,6 +160,35 @@ export default function App() {
   const [resError, setResError] = useState(null);
   const [selectedResource, setSelectedResource] = useState(null);
 
+  // Global Detailed API Error Diagnostic State
+  const [globalApiError, setGlobalApiError] = useState(null);
+
+  const formatDetailedError = (err, actionName, targetUrl) => {
+    const target = targetUrl || API_BASE_URL;
+    const message = err.message || 'Unknown Error';
+    const code = err.code || '';
+    const status = err.response?.status ? `HTTP ${err.response.status} ${err.response.statusText || ''}` : 'No Response (Network Error)';
+    let responseData = null;
+    if (err.response?.data) {
+      responseData = typeof err.response.data === 'object' ? JSON.stringify(err.response.data, null, 2) : String(err.response.data);
+    }
+    
+    let explanation = '';
+    if (err.message === 'Network Error' || !err.response) {
+      explanation = `Unable to connect to backend at "${target}".\n• If running on Vercel: Set VITE_API_URL in Vercel settings to a public HTTPS URL (e.g. Ngrok or Render).\n• If running locally: Ensure FastAPI backend (uvicorn main:app --reload) is running on port 8000.`;
+    }
+
+    return {
+      action: actionName,
+      targetUrl: target,
+      message,
+      code,
+      status,
+      responseData,
+      explanation
+    };
+  };
+
   // Fetch Module 1 Products List
   const fetchModule1Products = async () => {
     setProductsLoading(true);
@@ -171,10 +200,13 @@ export default function App() {
         if (res.data.products.length > 0 && !selectedProductId) {
           setSelectedProductId(res.data.products[0].product_id);
         }
+        setGlobalApiError(null);
       }
     } catch (err) {
       console.warn("Could not fetch Module 1 products list:", err);
-      setProductsError("Failed to load products list.");
+      const detailed = formatDetailedError(err, "Fetch Module 1 Products List", `${API_BASE_URL}/api/products/module1`);
+      setProductsError(detailed.message);
+      setGlobalApiError(detailed);
     } finally {
       setProductsLoading(false);
     }
@@ -183,12 +215,16 @@ export default function App() {
   // Fetch Resources from Backend
   const fetchResources = async (reqId) => {
     try {
-      const response = await axios.get(`${RESOURCES_API_URL}?request_id=${reqId || activeRequestId}`);
+      const target = `${RESOURCES_API_URL}?request_id=${reqId || activeRequestId}`;
+      const response = await axios.get(target);
       if (Array.isArray(response.data)) {
         setResources(response.data);
       }
     } catch (err) {
       console.warn("Could not connect to FastAPI /api/resources, using local empty resources list.", err);
+      if (!globalApiError) {
+        setGlobalApiError(formatDetailedError(err, "Fetch Product Resources", RESOURCES_API_URL));
+      }
     }
   };
 
@@ -242,6 +278,7 @@ export default function App() {
       } catch (err) {
         console.error("Failed to load or process selected product details:", err);
         setSelectedProduct(null);
+        setGlobalApiError(formatDetailedError(err, "Load & Process Product Details", `${API_BASE_URL}/api/products/module1/${selectedProductId}`));
       } finally {
         setSelectedProductLoading(false);
         setProcessSelectedLoading(false);
@@ -279,8 +316,11 @@ export default function App() {
         organization: orgRegistry.length > 0 ? { records: orgRegistry } : null,
       });
       setM5Result(res.data);
+      setGlobalApiError(null);
     } catch (err) {
-      setM5Error(err.response?.data?.detail || err.message || 'Semantic interpretation failed.');
+      const detailed = formatDetailedError(err, "Module 5 Semantic Interpretation", `${API_BASE_URL}/api/module5/semantic-interpretation`);
+      setM5Error(`${detailed.message} (${detailed.status})`);
+      setGlobalApiError(detailed);
     } finally {
       setM5Loading(false);
     }
@@ -519,6 +559,58 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-8">
+
+        {/* FULL ERROR DIAGNOSTIC BANNER */}
+        {globalApiError && (
+          <div className="bg-rose-950/40 border-2 border-rose-500/50 rounded-2xl p-5 shadow-2xl space-y-3 relative overflow-hidden backdrop-blur-md">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start space-x-3">
+                <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 shrink-0 mt-0.5">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-sm font-bold text-rose-200 uppercase tracking-wider">
+                      Network / API Connection Error
+                    </h3>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                      {globalApiError.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-rose-300 font-semibold mt-1">
+                    Failed Action: {globalApiError.action}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGlobalApiError(null)}
+                className="text-slate-400 hover:text-white text-xs px-2 py-1 rounded bg-slate-900 border border-slate-800 transition-colors"
+              >
+                Dismiss ✕
+              </button>
+            </div>
+
+            <div className="bg-slate-950/80 rounded-xl p-3 border border-rose-900/40 font-mono text-[11px] space-y-1.5 text-rose-200">
+              <div><strong className="text-slate-400">Target Endpoint:</strong> <span className="text-amber-300">{globalApiError.targetUrl}</span></div>
+              <div><strong className="text-slate-400">Error Message:</strong> <span className="text-rose-400">{globalApiError.message}</span></div>
+              {globalApiError.code && <div><strong className="text-slate-400">Error Code:</strong> <span>{globalApiError.code}</span></div>}
+              {globalApiError.responseData && (
+                <div className="mt-2 pt-2 border-t border-rose-900/30">
+                  <strong className="text-slate-400 block mb-1">Server Response Data:</strong>
+                  <pre className="text-[10px] text-slate-300 bg-slate-900 p-2 rounded max-h-32 overflow-auto whitespace-pre-wrap">{globalApiError.responseData}</pre>
+                </div>
+              )}
+            </div>
+
+            {globalApiError.explanation && (
+              <div className="text-xs text-slate-300 bg-slate-900/90 rounded-xl p-3 border border-slate-800 font-sans leading-relaxed whitespace-pre-line">
+                <span className="font-bold text-amber-400 block mb-1">💡 Diagnostic Troubleshooting:</span>
+                {globalApiError.explanation}
+              </div>
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* LEFT COLUMN: 1. Select Input Type  +  2. Add Product Resource (Module 2) */}
