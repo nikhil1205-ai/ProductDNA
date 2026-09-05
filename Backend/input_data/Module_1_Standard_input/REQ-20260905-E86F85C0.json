@@ -1,19 +1,19 @@
 {
-  "request_id": "REQ-20260904-65362C9C",
+  "request_id": "REQ-20260905-E86F85C0",
   "input_type": "CSV",
   "identity": {
-    "product_name": "5B-332-120 HIOLIT 5\" P120",
+    "product_name": "5B-332-080 HIOLIT 5\" P80",
     "brand": null,
     "manufacturer": "Mirka Abrasives Inc (MIRUS)",
     "model": null,
     "sku": null,
-    "part_number": "5B-332-120"
+    "part_number": "5B-332-080"
   },
   "source_record": {
-    "row_number": 9,
+    "row_number": 8,
     "raw": {
-      "Mfg_Part_Num": "5B-332-120",
-      "Part_Desc": "5B-332-120 HIOLIT 5\" P120",
+      "Mfg_Part_Num": "5B-332-080",
+      "Part_Desc": "5B-332-080 HIOLIT 5\" P80",
       "E1_Brand": "-- Unbranded --",
       "Unilog_Brand": "-- No Unilog Brand --",
       "DIB_Brand": "-- No DIB Brand --",
@@ -25,11 +25,11 @@
     "extension": ".csv",
     "mime_type": "text/csv",
     "size_bytes": 1667,
-    "created_at": "2026-09-04T10:33:53.853574+00:00",
+    "created_at": "2026-09-05T04:42:01.415786+00:00",
     "checksum": "a63114df3a9dd73ea975faea2150e88aca2ecc50c519958309a66ddfa80f6478",
     "source_url": null,
     "retrieved_at": null,
-    "row_number": 9,
+    "row_number": 8,
     "total_rows": 11,
     "total_columns": 6
   },
