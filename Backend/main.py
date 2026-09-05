@@ -46,8 +46,18 @@ app.add_middleware(
 def read_root():
     return {
         "status": "online",
-        "service": "ProductDNA Module 1 - Product Intake & Document Processing",
+        "service": "ProductDNA Engine",
         "documentation": "/docs"
+    }
+
+@app.get("/health")
+@app.get("/ping")
+@app.get("/api/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "ProductDNA Engine",
+        "uptime": "online"
     }
 
 @app.post(
